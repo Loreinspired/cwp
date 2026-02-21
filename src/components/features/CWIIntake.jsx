@@ -77,11 +77,18 @@ export default function CWIIntake({ heroMode = false }) {
     const [sessionId] = useState(() => typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36));
     const [leadState, setLeadState] = useState({ visible: false, submitted: false, name: '', email: '', phone: '' });
     const [userTurns, setUserTurns] = useState(0);
-    const bottomRef = useRef(null);
+    const containerRef = useRef(null);
     const textareaRef = useRef(null);
 
+    // Scroll WITHIN the chat container only — never jumps the page
+    const scrollToBottom = () => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    };
+
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        scrollToBottom();
     }, [messages, isTyping]);
 
     const sendMessage = async () => {
@@ -94,6 +101,8 @@ export default function CWIIntake({ heroMode = false }) {
         setInput('');
         setIsTyping(true);
         setUserTurns(newTurns);
+        // Dismiss mobile keyboard cleanly after send
+        textareaRef.current?.blur();
 
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
@@ -183,7 +192,7 @@ export default function CWIIntake({ heroMode = false }) {
     const chatUI = (
         <>
             {/* Message list */}
-            <div style={{
+            <div ref={containerRef} style={{
                 minHeight: '80px',
                 maxHeight: heroMode ? '300px' : '380px',
                 overflowY: 'auto',
@@ -191,10 +200,10 @@ export default function CWIIntake({ heroMode = false }) {
                 paddingRight: '4px',
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'var(--cwp-border) transparent',
+                WebkitOverflowScrolling: 'touch', // smooth scroll on iOS
             }}>
                 {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} isFirst={i === 0} />)}
                 {isTyping && <TypingIndicator />}
-                <div ref={bottomRef} />
             </div>
 
             {/* Lead capture card */}

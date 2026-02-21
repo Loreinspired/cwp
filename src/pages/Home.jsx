@@ -256,7 +256,7 @@ export default function Home() {
     return (
         <div>
             {/* ── Hero ───────────────────────────────────────────────────── */}
-            <section style={{
+            <section className="hero-section" style={{
                 minHeight: '100vh',
                 display: 'flex',
                 alignItems: 'center',
@@ -281,8 +281,8 @@ export default function Home() {
 
                 <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }} className="hero-grid">
 
-                    {/* Left — Headline + trust */}
-                    <div>
+                    {/* Left — Headline */}
+                    <div className="hero-left">
                         <SectionLabel style={{ display: 'block', marginBottom: '24px' }}>
                             Ekiti · Abuja · Ikoyi · Nigeria
                         </SectionLabel>
@@ -305,7 +305,7 @@ export default function Home() {
                     </div>
 
                     {/* Right — CWI Intake (hero mode) */}
-                    <div style={{
+                    <div className="hero-right" style={{
                         background: 'var(--cwp-ink)',
                         border: '1px solid var(--cwp-border)',
                         borderLeft: '3px solid var(--cwp-accent)',
@@ -413,13 +413,33 @@ export default function Home() {
         }
         .cwp-ticker-track:hover { animation-play-state: paused; }
 
+        /* ── Mobile-first overrides ───────────────────────── */
         @media (max-width: 768px) {
           .mobile-cta-bar { display: flex !important; }
-          body { padding-bottom: 60px; }
           .trust-bar-inner { justify-content: center !important; }
-          .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+
+          /* Hero: no forced full-height, tight padding */
+          .hero-section {
+            min-height: auto !important;
+            padding: 100px 20px 48px !important;
+          }
+
+          /* Stack grid: CWI panel moves above the headline on mobile */
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 32px !important;
+          }
+          .hero-left  { order: 2; }
+          .hero-right { order: 1; }
+
+          /* CWI panel: full-width, no left-border thickness distracting on small screens */
+          .hero-right > div {
+            border-left-width: 2px !important;
+          }
         }
-        @media (max-width: 600px) {
+
+        @media (max-width: 480px) {
+          .hero-section { padding: 88px 16px 40px !important; }
           .why-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
