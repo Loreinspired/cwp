@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowRight, Send, Loader } from 'lucide-react';
 import SectionLabel from '../ui/SectionLabel';
 import Button from '../ui/Button';
+import { saveCWISession } from '../../lib/supabase';
 
 const SYSTEM_PROMPT = `You are the Clearwater Intelligence Desk — the AI advisory interface of Clearwater Partners, a Nigerian commercial law firm specialising in corporate advisory, capital markets, M&A, and regulatory compliance.
 
@@ -118,23 +119,20 @@ export default function CWIIntake({ heroMode = false }) {
             const data = await res.json();
             const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate a response.';
             const modelMsg = { role: 'model', content: reply };
-            setMessages([...newMessages, modelMsg]);
+            const updatedMessages = [...newMessages, modelMsg];
+            setMessages(updatedMessages);
 
-            // Show lead capture after first AI analysis response (after user has sent at least 1 message)
+            // Show lead capture after first AI response
             if (newTurns >= 1 && !leadState.visible && !leadState.submitted) {
                 setTimeout(() => setLeadState(prev => ({ ...prev, visible: true })), 800);
             }
 
-            // Save session to localStorage (Supabase integration coming)
+            // Save to Supabase + localStorage backup
+            saveCWISession({ sessionId, messages: updatedMessages, leadCaptured: false });
             try {
                 const allSessions = JSON.parse(localStorage.getItem('cwi_sessions') || '[]');
                 const idx = allSessions.findIndex(s => s.id === sessionId);
-                const session = {
-                    id: sessionId,
-                    messages: [...newMessages, modelMsg],
-                    leadState,
-                    timestamp: new Date().toISOString(),
-                };
+                const session = { id: sessionId, messages: updatedMessages, timestamp: new Date().toISOString() };
                 if (idx >= 0) allSessions[idx] = session;
                 else allSessions.push(session);
                 localStorage.setItem('cwi_sessions', JSON.stringify(allSessions));
@@ -156,15 +154,18 @@ export default function CWIIntake({ heroMode = false }) {
 
     const submitLead = () => {
         if (!leadState.email) return;
-        const enrichedSession = {
-            id: sessionId,
+        // Save to Supabase with full lead details
+        saveCWISession({
+            sessionId,
+            messages,
             name: leadState.name,
             email: leadState.email,
             phone: leadState.phone,
-            messages,
-            timestamp: new Date().toISOString(),
-        };
+            leadCaptured: true,
+        });
+        // Also persist locally
         try {
+            const enrichedSession = { id: sessionId, name: leadState.name, email: leadState.email, phone: leadState.phone, messages, timestamp: new Date().toISOString() };
             const all = JSON.parse(localStorage.getItem('cwi_leads') || '[]');
             all.push(enrichedSession);
             localStorage.setItem('cwi_leads', JSON.stringify(all));
