@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* ─── Dark mode (default) ─────────────────────────────────────────────────── */
+:root {
+  --cwp-void: #080808;
+  --cwp-ink: #0f0f0f;
+  --cwp-surface: #171717;
+  --cwp-raised: #222222;
+  --cwp-border: #2a2a2a;
+  --cwp-muted: #5e5e5e;
+  --cwp-text: #e6e6e6;
+  --cwp-white: #f2f2f2;
+  --cwp-pure: #ffffff;
+  --cwp-accent: #c9a04a;
+  --cwp-accent-dim: rgba(201, 160, 74, 0.12);
+  --cwp-nav-bg: rgba(8, 8, 8, 0.97);
+}
+
+/* ─── Light "day" mode ───────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --cwp-void: #f5f0e8;
+  --cwp-ink: #ede8df;
+  --cwp-surface: #e8e2d8;
+  --cwp-raised: #ddd8ce;
+  --cwp-border: #c5bfb5;
+  --cwp-muted: #7a7268;
+  --cwp-text: #1a1a18;
+  --cwp-white: #0f0e0c;
+  --cwp-pure: #000000;
+  --cwp-accent: #a87828;
+  --cwp-accent-dim: rgba(168, 120, 40, 0.12);
+  --cwp-nav-bg: rgba(245, 240, 232, 0.97);
+}
+
+/* ─── Smooth theme transitions ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition:
+    background-color 0.35s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    fill 0.25s ease,
+    stroke 0.25s ease;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--cwp-void);
+  color: var(--cwp-text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--cwp-accent);
+  color: var(--cwp-void);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cwp-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cwp-border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cwp-muted);
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ─── Page fade-in on route change ───────────────────────────────────────── */
+@keyframes cwp-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cwp-page {
+  animation: cwp-page-enter 0.4s ease both;
+}
+
+/* ─── Scroll-reveal (applied via IntersectionObserver in App.jsx) ─────────── */
+.cwp-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.cwp-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Reduced-motion safety ──────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  .cwp-page,
+  .cwp-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ─── Mobile padding utility ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cwp-px {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
