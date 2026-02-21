@@ -309,14 +309,11 @@ export default function Home() {
                         background: 'var(--cwp-ink)',
                         border: '1px solid var(--cwp-border)',
                         borderLeft: '3px solid var(--cwp-accent)',
-                        padding: '40px',
+                        padding: '28px 32px',
                         position: 'relative',
                     }}>
-                        <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '8px' }}>
+                        <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '16px' }}>
                             CWI · Clearwater Intelligence
-                        </p>
-                        <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '28px', lineHeight: 1.6 }}>
-                            Describe your matter. Get a preliminary legal analysis instantly — no commitment required.
                         </p>
                         <CWIIntake heroMode />
                     </div>

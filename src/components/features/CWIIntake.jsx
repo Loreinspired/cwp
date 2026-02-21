@@ -36,24 +36,31 @@ function TypingIndicator() {
     );
 }
 
-function Message({ role, content }) {
+function Message({ role, content, isFirst }) {
     const isUser = role === 'user';
+    // The very first model message renders as a styled prompt, not a bubble
+    if (!isUser && isFirst) {
+        return (
+            <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--cwp-border)' }}>
+                <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{content}</p>
+            </div>
+        );
+    }
     return (
         <div style={{
             display: 'flex',
             justifyContent: isUser ? 'flex-end' : 'flex-start',
-            marginBottom: '12px',
+            marginBottom: '10px',
         }}>
             <div style={{
-                maxWidth: '85%',
-                padding: '12px 16px',
-                background: isUser ? 'var(--cwp-accent)' : 'var(--cwp-raised)',
+                maxWidth: '88%',
+                padding: '10px 14px',
+                background: isUser ? 'var(--cwp-accent)' : 'rgba(255,255,255,0.04)',
                 color: isUser ? 'var(--cwp-void)' : 'var(--cwp-text)',
                 fontSize: '13px',
                 lineHeight: 1.75,
                 whiteSpace: 'pre-wrap',
-                borderRadius: '2px',
-                borderLeft: isUser ? 'none' : '2px solid var(--cwp-border)',
+                borderLeft: isUser ? 'none' : '2px solid var(--cwp-accent)',
             }}>
                 {content}
             </div>
@@ -173,20 +180,19 @@ export default function CWIIntake({ heroMode = false }) {
         setLeadState(prev => ({ ...prev, submitted: true }));
     };
 
-    const chatHeight = heroMode ? '320px' : '380px';
-
     const chatUI = (
         <>
             {/* Message list */}
             <div style={{
-                height: chatHeight,
+                minHeight: '80px',
+                maxHeight: heroMode ? '300px' : '380px',
                 overflowY: 'auto',
-                marginBottom: '16px',
+                marginBottom: '12px',
                 paddingRight: '4px',
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'var(--cwp-border) transparent',
             }}>
-                {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} />)}
+                {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} isFirst={i === 0} />)}
                 {isTyping && <TypingIndicator />}
                 <div ref={bottomRef} />
             </div>
