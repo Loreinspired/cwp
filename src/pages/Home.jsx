@@ -302,20 +302,6 @@ export default function Home() {
                         <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', lineHeight: 1.8, marginBottom: '36px', maxWidth: '380px' }}>
                             Describe your matter. Get a substantive preliminary analysis in seconds — then engage us formally.
                         </p>
-
-                        {/* Compact stat bar */}
-                        <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingTop: '28px', borderTop: '1px solid var(--cwp-border)' }}>
-                            {[
-                                { value: '4+', label: 'Alliance Nodes' },
-                                { value: '₦bn+', label: 'Transactions Advised' },
-                                { value: '2018', label: 'Est.' },
-                            ].map(({ value, label }) => (
-                                <div key={label}>
-                                    <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 700, color: 'var(--cwp-white)', lineHeight: 1 }}>{value}</p>
-                                    <p style={{ fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--cwp-muted)', marginTop: '4px' }}>{label}</p>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Right — CWI Intake (hero mode) */}
