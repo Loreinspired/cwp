@@ -52,8 +52,8 @@ const TEAM = [
 ];
 
 const TIMELINE = [
-    { year: '2018', event: 'Firm Founded', detail: 'Clearwater Partners established in Nigeria.' },
-    { year: '2020', event: 'First Alliance', detail: 'Temidayo Akeredolu & Co. joins the Clear Water Network.' },
+    { year: '2018', event: 'Firm Founded', detail: 'Clearwater Partners established in Ado-Ekiti, Ekiti State.' },
+    { year: '2020', event: 'First Alliance', detail: 'Temidayo Akeredolu & Co. joins the Clearwater Network.' },
     { year: '2022', event: 'Network Expanded', detail: 'Multi-city coverage formalised across Ekiti, Abuja, and Port Harcourt.' },
     { year: '2024', event: 'West Africa', detail: 'Alliance network extended to serve cross-border mandates across West Africa.' },
 ];
@@ -117,7 +117,7 @@ export default function About() {
                                 onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
                                 onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                             >
-                                Get in Touch
+                                Brief Us
                             </Link>
                         </div>
 
@@ -327,7 +327,7 @@ export default function About() {
                             "People wear their association with Clearwater as a mark."
                         </h2>
                         <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', lineHeight: 1.8, marginBottom: '16px' }}>
-                            The lawyers who have passed through this firm go on to hold some of the most consequential legal roles in Nigeria — General Counsel at leading institutions, founders of their own successful practices, partners at international firms.
+                            The lawyers who have passed through this firm go on to hold some of the most consequential legal roles in Nigeria — Head of Legal at leading institutions, founders of their own practices, and senior counsel at firms across the continent.
                         </p>
                         <Link to="/network" style={{
                             display: 'inline-block', marginTop: '24px', fontSize: '11px', fontWeight: 700,

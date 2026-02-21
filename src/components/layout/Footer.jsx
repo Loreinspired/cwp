@@ -15,7 +15,7 @@ const COLS = [
     {
         heading: 'Alliance',
         links: [
-            { label: 'Clearwater Partners (HQ)', to: '/network/clearwater-partners' },
+            { label: 'The Clearwater Network', to: '/network' },
             { label: 'Temidayo Akeredolu & Co.', to: '/network/temidayo-akeredolu' },
         ],
     },

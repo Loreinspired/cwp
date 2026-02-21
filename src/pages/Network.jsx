@@ -10,8 +10,8 @@ const AFFILIATE_UNITS = [
         focus: 'Startup & SME Advisory',
         location: 'Nigeria',
         description:
-            "Startup and SME advisory — co-founder structures, fundraising legal support, and employment law. Independently run under the Clear Water brand.",
-        tag: 'Clear Water Unit',
+            "Startup and SME advisory — co-founder structures, fundraising legal support, and employment law. Independently run under the Clearwater brand.",
+        tag: 'Clearwater Unit',
     },
 ];
 
@@ -28,7 +28,7 @@ export default function Network() {
                 }}
             >
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <SectionLabel style={{ display: 'block', marginBottom: '16px' }}>The Clear Water Network</SectionLabel>
+                    <SectionLabel style={{ display: 'block', marginBottom: '16px' }}>The Clearwater Network</SectionLabel>
                     <h1
                         style={{
                             fontFamily: "'Playfair Display', serif",
@@ -43,7 +43,7 @@ export default function Network() {
                         Independent Firms.<br /><em>One Network.</em>
                     </h1>
                     <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', maxWidth: '600px', lineHeight: 1.8 }}>
-                        The Clear Water Network is a unified professional brand under which independent lawyers and practices operate autonomously — introducing themselves, and being introduced, as partners of Clear Water. One name. One standard. Independently run.
+                        The Clearwater Network is a unified professional brand under which independent lawyers and practices operate autonomously — introducing themselves, and being introduced, as practitioners of Clearwater. One standard. Independently run.
                     </p>
                 </div>
             </section>
@@ -83,7 +83,7 @@ export default function Network() {
                             <br /><em>Independent Practitioners.</em>
                         </h2>
                         <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', lineHeight: 1.85 }}>
-                            Each practitioner runs independently — their own clients, management, and fees — while presenting as a partner of Clear Water.
+                            Each practitioner runs independently — their own clients, management, and fees — while presenting as a practitioner of Clearwater.
                         </p>
                     </div>
                     <div>
@@ -91,7 +91,7 @@ export default function Network() {
                         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0' }}>
                             {[
                                 'Contact the Intelligence Desk with your matter type and jurisdiction.',
-                                'We identify the right Clear Water practitioner for your matter.',
+                                'We identify the right Clearwater practitioner for your matter.',
                                 'A formal engagement letter is issued — clear scope, clear fees.',
                                 'Where matters span multiple areas, practitioners coordinate under one relationship.',
                             ].map((item, i) => (
@@ -118,7 +118,7 @@ export default function Network() {
                 </div>
             </section>
 
-            {/* Clear Water Units */}
+            {/* Clearwater Units */}
             <section style={{ padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
                 <div style={{ borderBottom: '1px solid var(--cwp-border)', paddingBottom: '24px', marginBottom: '0' }}>
                     <p
@@ -131,7 +131,7 @@ export default function Network() {
                             marginBottom: '10px',
                         }}
                     >
-                        Clear Water Units
+                        Clearwater Units
                     </p>
                     <h2
                         style={{

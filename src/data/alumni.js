@@ -5,9 +5,9 @@ export const alumni = [
         initials: 'AW',
         yearsAtCWP: '2018 – 2021',
         roleAtCWP: 'Senior Associate, Corporate Advisory',
-        currentRole: 'General Counsel',
-        currentOrg: 'Andela Inc.',
-        location: 'Lagos / San Francisco',
+        currentRole: 'Head of Legal, Africa',
+        currentOrg: 'Andela',
+        location: 'Lagos, Nigeria',
         quote:
             "CWP gave me the rigour I needed to operate at the international level. The culture of intellectual honesty — of not just telling clients what they want to hear — shaped every role I've held since.",
         specializations: ['Corporate Advisory', 'Capital Markets'],

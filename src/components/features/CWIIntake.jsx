@@ -148,7 +148,7 @@ export default function CWIIntake() {
                     />
                     {error && <p style={{ fontSize: '12px', color: '#e07070', marginBottom: '12px' }}><AlertCircle size={12} style={{ display: 'inline', marginRight: '6px' }} />{error}</p>}
                     <Button onClick={handleAnalyze} variant="primary">
-                        Analyze Scenario <ArrowRight size={14} />
+                        Analyse Scenario <ArrowRight size={14} />
                     </Button>
                 </div>
             )}
@@ -164,7 +164,7 @@ export default function CWIIntake() {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !loading && handleUnlock()}
-                        placeholder="your@organization.com"
+                        placeholder="your@organisation.com"
                         style={{
                             width: '100%',
                             background: 'var(--cwp-raised)',
@@ -179,7 +179,7 @@ export default function CWIIntake() {
                     {error && <p style={{ fontSize: '12px', color: '#e07070', marginBottom: '12px' }}><AlertCircle size={12} style={{ display: 'inline', marginRight: '6px' }} />{error}</p>}
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <Button onClick={handleUnlock} disabled={loading} variant="primary">
-                            {loading ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Analyzing…</> : <>Unlock Analysis <ArrowRight size={14} /></>}
+                            {loading ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Analysing…</> : <>Unlock Analysis <ArrowRight size={14} /></>}
                         </Button>
                         <Button onClick={() => { setStep(1); setError(''); }} variant="ghost">Back</Button>
                     </div>
