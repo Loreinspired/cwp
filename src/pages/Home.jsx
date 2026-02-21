@@ -260,142 +260,79 @@ export default function Home() {
                 minHeight: '100vh',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '140px 48px 0',
+                padding: '120px 48px 60px',
                 position: 'relative',
                 overflow: 'hidden',
                 background: 'var(--cwp-void)',
             }}>
                 {/* Background image */}
                 <div style={{
-                    position: 'absolute',
-                    inset: 0,
+                    position: 'absolute', inset: 0,
                     backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80&auto=format&fit=crop')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center 40%',
-                    opacity: 0.07,
-                    pointerEvents: 'none',
+                    backgroundSize: 'cover', backgroundPosition: 'center 40%',
+                    opacity: 0.06, pointerEvents: 'none',
                 }} />
-                {/* Gradient overlay */}
                 <div style={{
-                    position: 'absolute',
-                    inset: 0,
+                    position: 'absolute', inset: 0,
                     background: 'linear-gradient(to bottom, transparent 60%, var(--cwp-void) 100%)',
                     pointerEvents: 'none',
                 }} />
-
-                {/* Grid decorations */}
-                <div style={{ position: 'absolute', top: '100px', right: '80px' }}>
-                    <GridDots size={200} opacity={0.2} />
-                </div>
-                {/* Accent line */}
                 <div style={{ position: 'absolute', top: 0, left: '48px', width: '1px', height: '48px', background: 'var(--cwp-accent)' }} />
-                {/* Watermark */}
-                <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    right: '-60px',
-                    transform: 'translateY(-50%)',
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: 'clamp(240px, 30vw, 420px)',
-                    fontWeight: 700,
-                    color: 'var(--cwp-white)',
-                    opacity: 0.025,
-                    lineHeight: 1,
-                    userSelect: 'none',
-                    pointerEvents: 'none',
-                    letterSpacing: '-0.05em',
-                }}>C</div>
 
-                <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative' }}>
-                    <SectionLabel style={{ display: 'block', marginBottom: '28px' }}>
-                        Ekiti · Abuja · Ikoyi · Nigeria · West Africa
-                    </SectionLabel>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }} className="hero-grid">
 
-                    <h1 style={{
-                        fontFamily: "'Playfair Display', serif",
-                        fontSize: 'clamp(40px, 7vw, 96px)',
-                        fontWeight: 400,
-                        color: 'var(--cwp-white)',
-                        lineHeight: 1.05,
-                        letterSpacing: '-0.02em',
-                        maxWidth: '820px',
-                        marginBottom: '32px',
-                    }}>
-                        Commercial Law
-                        <br />
-                        <em style={{ color: 'var(--cwp-accent)' }}>for institutions</em>
-                        <br />
-                        that move markets.
-                    </h1>
+                    {/* Left — Headline + trust */}
+                    <div>
+                        <SectionLabel style={{ display: 'block', marginBottom: '24px' }}>
+                            Ekiti · Abuja · Ikoyi · Nigeria
+                        </SectionLabel>
+                        <h1 style={{
+                            fontFamily: "'Playfair Display', serif",
+                            fontSize: 'clamp(36px, 5.5vw, 80px)',
+                            fontWeight: 400,
+                            color: 'var(--cwp-white)',
+                            lineHeight: 1.05,
+                            letterSpacing: '-0.02em',
+                            marginBottom: '28px',
+                        }}>
+                            Commercial Law<br />
+                            <em style={{ color: 'var(--cwp-accent)' }}>for institutions</em><br />
+                            that move markets.
+                        </h1>
+                        <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', lineHeight: 1.8, marginBottom: '36px', maxWidth: '380px' }}>
+                            Describe your matter. Get a substantive preliminary analysis in seconds — then engage us formally.
+                        </p>
 
-                    <p style={{
-                        fontSize: '15px',
-                        color: 'var(--cwp-muted)',
-                        maxWidth: '460px',
-                        lineHeight: 1.8,
-                        marginBottom: '40px',
-                    }}>
-                        A Nigerian commercial law firm. We advise the businesses and institutions
-                        building the next chapter of Nigerian commerce — on the matters that require serious legal counsel.
-                    </p>
-
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Button onClick={() => window.location.href = '/contact'} variant="primary">
-                            Engage the Firm <ArrowRight size={14} />
-                        </Button>
-                        <Link to="/services" style={{
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.12em',
-                            textTransform: 'uppercase',
-                            color: 'var(--cwp-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            transition: 'color 0.2s',
-                        }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--cwp-white)'}
-                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--cwp-muted)'}
-                        >
-                            View Practice Areas <ArrowRight size={12} />
-                        </Link>
+                        {/* Compact stat bar */}
+                        <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingTop: '28px', borderTop: '1px solid var(--cwp-border)' }}>
+                            {[
+                                { value: '4+', label: 'Alliance Nodes' },
+                                { value: '₦bn+', label: 'Transactions Advised' },
+                                { value: '2018', label: 'Est.' },
+                            ].map(({ value, label }) => (
+                                <div key={label}>
+                                    <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 700, color: 'var(--cwp-white)', lineHeight: 1 }}>{value}</p>
+                                    <p style={{ fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--cwp-muted)', marginTop: '4px' }}>{label}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Stat bar */}
+                    {/* Right — CWI Intake (hero mode) */}
                     <div style={{
-                        marginTop: '80px',
-                        paddingTop: '32px',
-                        borderTop: '1px solid var(--cwp-border)',
-                        display: 'flex',
-                        gap: '48px',
-                        flexWrap: 'wrap',
-                        paddingBottom: '60px',
+                        background: 'var(--cwp-ink)',
+                        border: '1px solid var(--cwp-border)',
+                        borderLeft: '3px solid var(--cwp-accent)',
+                        padding: '40px',
+                        position: 'relative',
                     }}>
-                        {[
-                            { value: '4+', label: 'Alliance Nodes' },
-                            { value: '₦bn+', label: 'Transactions Advised' },
-                            { value: '2018', label: 'Established' },
-                            { value: '5', label: 'Practice Areas' },
-                        ].map(({ value, label }) => (
-                            <div
-                                key={label}
-                                style={{
-                                    paddingTop: '16px',
-                                    borderTop: '1px solid var(--cwp-accent)',
-                                    transition: 'transform 0.2s ease',
-                                    cursor: 'default',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: 700, color: 'var(--cwp-white)', lineHeight: 1 }}>
-                                    {value}
-                                </p>
-                                <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--cwp-muted)', marginTop: '6px' }}>
-                                    {label}
-                                </p>
-                            </div>
-                        ))}
+                        <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '8px' }}>
+                            CWI · Clearwater Intelligence
+                        </p>
+                        <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '28px', lineHeight: 1.6 }}>
+                            Describe your matter. Get a preliminary legal analysis instantly — no commitment required.
+                        </p>
+                        <CWIIntake heroMode />
                     </div>
                 </div>
             </section>
@@ -406,10 +343,6 @@ export default function Home() {
             {/* ── Trust Bar ──────────────────────────────────────────────── */}
             <TrustBar />
 
-            {/* ── CWI Intake ─────────────────────────────────────────────── */}
-            <section style={{ padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
-                <CWIIntake />
-            </section>
 
             {/* ── Why CWP ────────────────────────────────────────────────── */}
             <WhyCWP />
@@ -503,6 +436,7 @@ export default function Home() {
           .mobile-cta-bar { display: flex !important; }
           body { padding-bottom: 60px; }
           .trust-bar-inner { justify-content: center !important; }
+          .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
         }
         @media (max-width: 600px) {
           .why-grid { grid-template-columns: 1fr !important; }

@@ -16,7 +16,7 @@ Rules:
 5. Do not ask follow-up questions. Work with what you have.
 6. Maintain a tone that is authoritative, precise, and reassuring — never casual or speculative.`;
 
-export default function CWIIntake() {
+export default function CWIIntake({ heroMode = false }) {
     const [step, setStep] = useState(1); // 1=scenario, 2=email gate, 3=result
     const [scenario, setScenario] = useState('');
     const [email, setEmail] = useState('');
@@ -97,27 +97,8 @@ export default function CWIIntake() {
         setError('');
     };
 
-    return (
-        <section
-            style={{
-                background: 'var(--cwp-surface)',
-                border: '1px solid var(--cwp-border)',
-                padding: '56px 48px',
-                position: 'relative',
-                overflow: 'hidden',
-            }}
-        >
-            {/* Corner decoration */}
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '120px', height: '120px', borderLeft: '1px solid var(--cwp-border)', borderBottom: '1px solid var(--cwp-border)', opacity: 0.4 }} />
-
-            <SectionLabel style={{ display: 'block', marginBottom: '12px' }}>CWI · Clearwater Intelligence</SectionLabel>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 400, color: 'var(--cwp-white)', marginBottom: '8px', lineHeight: 1.2 }}>
-                Submit Your Matter
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '36px', maxWidth: '480px', lineHeight: 1.6 }}>
-                Describe your legal scenario below. Our AI advisory desk provides rapid preliminary analysis — no commitment required.
-            </p>
-
+    const inner = (
+        <>
             {/* Step indicators */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
                 {[1, 2, 3].map(s => (
@@ -217,6 +198,28 @@ export default function CWIIntake() {
         textarea:focus, input:focus { border-color: var(--cwp-accent) !important; }
         textarea::placeholder, input::placeholder { color: var(--cwp-border); }
       `}</style>
+        </>
+    );
+
+    if (heroMode) return inner;
+
+    return (
+        <section style={{
+            background: 'var(--cwp-surface)',
+            border: '1px solid var(--cwp-border)',
+            padding: '56px 48px',
+            position: 'relative',
+            overflow: 'hidden',
+        }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '120px', height: '120px', borderLeft: '1px solid var(--cwp-border)', borderBottom: '1px solid var(--cwp-border)', opacity: 0.4 }} />
+            <SectionLabel style={{ display: 'block', marginBottom: '12px' }}>CWI · Clearwater Intelligence</SectionLabel>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 400, color: 'var(--cwp-white)', marginBottom: '8px', lineHeight: 1.2 }}>
+                Submit Your Matter
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '36px', maxWidth: '480px', lineHeight: 1.6 }}>
+                Describe your legal scenario below. Our AI advisory desk provides rapid preliminary analysis — no commitment required.
+            </p>
+            {inner}
         </section>
     );
 }
