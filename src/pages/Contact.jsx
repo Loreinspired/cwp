@@ -75,7 +75,7 @@ export default function Contact() {
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--cwp-muted)', display: 'block', marginBottom: '8px' }}>Organisation</label>
-                                    <input name="org" value={form.org} onChange={handleChange} placeholder="Acme Capital Ltd." style={inputStyle} />
+                                    <input name="org" value={form.org} onChange={handleChange} placeholder="Acme Capital Limited" style={inputStyle} />
                                 </div>
                             </div>
 

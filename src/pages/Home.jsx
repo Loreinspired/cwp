@@ -17,9 +17,11 @@ const TICKER_ITEMS = [
     'Mergers & Acquisitions',
     'Regulatory Compliance',
     'Dispute Resolution',
-    'Nigerian Commercial Law',
-    'Alliance Network',
-    'West Africa Coverage',
+    'CAMA 2020 Advisory',
+    'CBN & SEC Licensing',
+    'FIRS Engagement',
+    'LCA · ICC Arbitration',
+    'Ado-Ekiti · Abuja · Lagos Island',
 ];
 
 function Ticker() {
@@ -60,10 +62,10 @@ function Ticker() {
 // ─── Trust Bar ───────────────────────────────────────────────────────────────
 const TRUST_ITEMS = [
     { label: 'Nigerian Bar Association', sub: 'Member' },
-    { label: 'ICC Arbitration', sub: 'Authorised' },
-    { label: 'CBN Compliant', sub: 'Regulatory Advisory' },
-    { label: 'LSE · BL Abuja', sub: 'Academic Credentials' },
-    { label: 'FCCPC Registered', sub: 'Data Protection' },
+    { label: 'NICArb · ICC', sub: 'Arbitration Practice' },
+    { label: 'CBN · SEC Advisory', sub: 'Regulatory Practice' },
+    { label: 'LSE · BL, Nigerian Law School', sub: 'Academic Credentials' },
+    { label: 'NDPC Registered', sub: 'Data Protection' },
 ];
 
 function TrustBar() {
@@ -120,7 +122,7 @@ const WHY_ITEMS = [
     {
         number: '03',
         title: 'Alliance Network',
-        body: 'Multi-city coverage across Nigeria via the Clear Water Network. One relationship, coordinated across Ado-Ekiti, Abuja, Ikoyi, and beyond.',
+        body: 'Multi-city coverage across Nigeria through the Clearwater Network. One relationship, coordinated across Ado-Ekiti, Abuja, Lagos Island, and beyond.',
     },
 ];
 
@@ -267,9 +269,9 @@ export default function Home() {
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backgroundImage: `url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80&auto=format&fit=crop')`,
+                    backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80&auto=format&fit=crop')`,
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center 60%',
+                    backgroundPosition: 'center 40%',
                     opacity: 0.07,
                     pointerEvents: 'none',
                 }} />
@@ -333,8 +335,8 @@ export default function Home() {
                         lineHeight: 1.8,
                         marginBottom: '40px',
                     }}>
-                        Clearwater Partners provides corporate advisory, capital markets, M&amp;A,
-                        and regulatory compliance services to the institutions that define Nigerian commerce.
+                        A Nigerian commercial law firm. We advise the businesses and institutions
+                        building the next chapter of Nigerian commerce — on the matters that require serious legal counsel.
                     </p>
 
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>

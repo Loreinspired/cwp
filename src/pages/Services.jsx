@@ -62,7 +62,7 @@ export default function Services() {
                         Have a matter in mind?
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', lineHeight: 1.7, marginBottom: '28px' }}>
-                        Submit a preliminary inquiry through the Intelligence Desk or contact us directly.
+                        Submit a preliminary enquiry through the Intelligence Desk or contact us directly.
                     </p>
                     <a
                         href="/contact"
