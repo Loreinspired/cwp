@@ -20,7 +20,7 @@ TONE: Authoritative, precise, and substantive. Never casual. Never speculative w
 LENGTH: Clarifying questions: 1-2 sentences max. Analysis: 200-300 words, use clear headings.
 CRITICAL: Never refuse to engage with a legitimate commercial law matter. Always move the conversation forward.`;
 
-const MODEL = 'gemini-2.5-flash-preview-04-17';
+const MODEL = 'gemini-2.5-flash';
 
 function TypingIndicator() {
     return (
