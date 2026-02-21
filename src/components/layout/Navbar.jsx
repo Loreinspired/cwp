@@ -58,9 +58,15 @@ export default function Navbar() {
                         textDecoration: 'none',
                     }}
                 >
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <rect x="0" y="0" width="28" height="28" fill="none" stroke="var(--cwp-white)" strokeWidth="1.5" />
-                        <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="var(--cwp-white)" fontSize="10" fontWeight="700" fontFamily="Inter, sans-serif" letterSpacing="0.05em">CWP</text>
+                    {/* CWP Logomark — C arc + W + P */}
+                    <svg width="36" height="34" viewBox="0 0 40 38" fill="none" style={{ flexShrink: 0 }}>
+                        {/* C */}
+                        <path d="M18 5 C18 5 7 5 7 13.5 C7 22 18 22 18 17" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" />
+                        {/* W */}
+                        <path d="M15.5 17 L19 29 L23 18.5 L27 29 L30.5 17" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        {/* P */}
+                        <path d="M30.5 6 L30.5 20" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" />
+                        <path d="M30.5 6 C30.5 6 38.5 6 38.5 13 C38.5 20 30.5 20 30.5 20" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cwp-white)' }}>
                         Clearwater Partners
