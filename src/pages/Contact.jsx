@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CheckCircle, Loader, ChevronDown, ChevronUp } from 'lucide-react';
 import SectionLabel from '../components/ui/SectionLabel';
 import Button from '../components/ui/Button';
@@ -26,6 +26,17 @@ export default function Contact() {
     const [submitted, setSubmitted] = useState(false);
     const [sending, setSending] = useState(false);
     const [showFallback, setShowFallback] = useState(false);
+    
+    const formRef = useRef(null);
+
+    // UX Refinement: Smooth scroll to the traditional form when toggled open
+    useEffect(() => {
+        if (showFallback && formRef.current) {
+            setTimeout(() => {
+                formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }, [showFallback]);
 
     const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -47,6 +58,7 @@ export default function Contact() {
         outline: 'none',
         display: 'block',
         boxSizing: 'border-box',
+        fontFamily: 'Inter, sans-serif'
     };
 
     const labelStyle = {
@@ -58,6 +70,9 @@ export default function Contact() {
         display: 'block',
         marginBottom: '8px',
     };
+
+    // SVG data URI for the custom select dropdown arrow
+    const selectArrow = `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`;
 
     return (
         <div style={{ paddingTop: '64px', background: 'var(--cwp-void)', minHeight: '100vh' }}>
@@ -84,6 +99,28 @@ export default function Contact() {
                     <p style={{ fontSize: '15px', color: 'var(--cwp-muted)', lineHeight: 1.8, maxWidth: '600px', margin: '0 auto' }}>
                         Describe your commercial matter below. The AI will ask focused questions, drill into the facts, and deliver a Nigerian-law-grounded preliminary analysis.
                     </p>
+
+                    {/* UX Refinement: Trust & Privacy Anchor */}
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '8px', 
+                        marginTop: '32px',
+                        padding: '10px 16px',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: '4px',
+                        display: 'inline-flex'
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cwp-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span style={{ fontSize: '10px', color: 'var(--cwp-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                            Confidential & Secure SLM Processing
+                        </span>
+                    </div>
                 </div>
             </section>
 
@@ -122,7 +159,7 @@ export default function Contact() {
                     </button>
 
                     {/* Traditional Form Container */}
-                    <div style={{
+                    <div ref={formRef} style={{
                         width: '100%',
                         maxWidth: '600px',
                         overflow: 'hidden',
@@ -165,28 +202,59 @@ export default function Contact() {
                                 </div>
                             ) : (
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* UX Refinement: Accessibility IDs matching htmlFor */}
                                     <div>
-                                        <label style={labelStyle}>Full Name *</label>
-                                        <input name="name" required value={form.name} onChange={handleChange} placeholder="e.g. Alexandra Okonkwo" style={inputStyle} />
+                                        <label htmlFor="name" style={labelStyle}>Full Name *</label>
+                                        <input id="name" name="name" required value={form.name} onChange={handleChange} placeholder="e.g. Alexandra Okonkwo" style={inputStyle} />
                                     </div>
 
                                     <div>
-                                        <label style={labelStyle}>Email Address *</label>
-                                        <input name="email" type="email" required value={form.email} onChange={handleChange} placeholder="you@organisation.com" style={inputStyle} />
+                                        <label htmlFor="email" style={labelStyle}>Email Address *</label>
+                                        <input id="email" name="email" type="email" required value={form.email} onChange={handleChange} placeholder="you@organisation.com" style={inputStyle} />
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="form-grid">
                                         <div>
-                                            <label style={labelStyle}>Client Type</label>
-                                            <select name="clientType" value={form.clientType} onChange={handleChange} style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}>
+                                            <label htmlFor="clientType" style={labelStyle}>Client Type</label>
+                                            <select 
+                                                id="clientType"
+                                                name="clientType" 
+                                                value={form.clientType} 
+                                                onChange={handleChange} 
+                                                style={{ 
+                                                    ...inputStyle, 
+                                                    appearance: 'none', 
+                                                    cursor: 'pointer',
+                                                    backgroundImage: selectArrow,
+                                                    backgroundRepeat: 'no-repeat',
+                                                    backgroundPosition: 'right 16px top 50%',
+                                                    backgroundSize: '10px auto',
+                                                    paddingRight: '40px'
+                                                }}
+                                            >
                                                 <option value="">Select your situation</option>
                                                 {CLIENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
                                         </div>
 
                                         <div>
-                                            <label style={labelStyle}>Matter Type</label>
-                                            <select name="matter" value={form.matter} onChange={handleChange} style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}>
+                                            <label htmlFor="matter" style={labelStyle}>Matter Type</label>
+                                            <select 
+                                                id="matter"
+                                                name="matter" 
+                                                value={form.matter} 
+                                                onChange={handleChange} 
+                                                style={{ 
+                                                    ...inputStyle, 
+                                                    appearance: 'none', 
+                                                    cursor: 'pointer',
+                                                    backgroundImage: selectArrow,
+                                                    backgroundRepeat: 'no-repeat',
+                                                    backgroundPosition: 'right 16px top 50%',
+                                                    backgroundSize: '10px auto',
+                                                    paddingRight: '40px'
+                                                }}
+                                            >
                                                 <option value="">Select practice area</option>
                                                 {MATTER_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
@@ -194,8 +262,9 @@ export default function Contact() {
                                     </div>
 
                                     <div>
-                                        <label style={labelStyle}>Brief Description *</label>
+                                        <label htmlFor="message" style={labelStyle}>Brief Description *</label>
                                         <textarea
+                                            id="message"
                                             name="message"
                                             required
                                             rows={5}
