@@ -9,7 +9,7 @@ const COLS = [
             { label: 'About', to: '/about' },
             { label: 'Services', to: '/services' },
             { label: 'Network', to: '/network' },
-            { label: 'Contact', to: '/contact' },
+            // Removed 'Contact' to channel traffic to the Digital Desk column
         ],
     },
     {
@@ -32,7 +32,8 @@ const COLS = [
     {
         heading: 'Digital Desk',
         links: [
-            { label: 'Clearwater Intelligence (CWI)', to: '/contact' },
+            // isPrimary flag applies a prominent hover color
+            { label: 'Clearwater Intelligence (CWI)', to: '/contact', isPrimary: true },
             { label: 'intelligence@cwplegal.africa', to: 'mailto:intelligence@cwplegal.africa' },
         ],
     },
@@ -76,24 +77,47 @@ export default function Footer() {
                                 >
                                     {heading}
                                 </p>
-                                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {links.map(({ label, to }) => (
+                                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', padding: 0, margin: 0 }}>
+                                    {links.map(({ label, to, isPrimary }) => (
                                         <li key={label}>
-                                            <Link
-                                                to={to}
-                                                style={{
-                                                    fontSize: '11px',
-                                                    color: 'var(--cwp-muted)',
-                                                    letterSpacing: '0.02em',
-                                                    transition: 'color 0.2s',
-                                                    lineHeight: '1.4',
-                                                    textDecoration: 'none',
-                                                }}
-                                                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--cwp-white)')}
-                                                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--cwp-muted)')}
-                                            >
-                                                {label}
-                                            </Link>
+                                            {to.startsWith('mailto:') ? (
+                                                <a
+                                                    href={to}
+                                                    style={{
+                                                        fontSize: '11px',
+                                                        color: 'var(--cwp-muted)',
+                                                        letterSpacing: '0.02em',
+                                                        transition: 'color 0.2s',
+                                                        lineHeight: '1.4',
+                                                        textDecoration: 'none',
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--cwp-white)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--cwp-muted)')}
+                                                >
+                                                    {label}
+                                                </a>
+                                            ) : (
+                                                <Link
+                                                    to={to}
+                                                    style={{
+                                                        fontSize: '11px',
+                                                        color: isPrimary ? 'var(--cwp-white)' : 'var(--cwp-muted)',
+                                                        fontWeight: isPrimary ? '600' : '400',
+                                                        letterSpacing: '0.02em',
+                                                        transition: 'color 0.2s',
+                                                        lineHeight: '1.4',
+                                                        textDecoration: 'none',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.color = isPrimary ? 'var(--cwp-accent)' : 'var(--cwp-white)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.color = isPrimary ? 'var(--cwp-white)' : 'var(--cwp-muted)')}
+                                                >
+                                                    {isPrimary && <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--cwp-accent)', display: 'inline-block' }}></span>}
+                                                    {label}
+                                                </Link>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
