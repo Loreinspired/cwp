@@ -3,8 +3,9 @@
 Clearwater Intelligence — Document Ingestion Pipeline
 ======================================================
 Crawls a OneDrive folder (or a local directory) for PDF and DOCX files,
-chunks them using a legal-optimised strategy, generates OpenAI embeddings,
-and upserts them into the Supabase cwp_documents table.
+chunks them using a legal-optimised strategy, generates Gemini embeddings
+(text-embedding-004, 768-dim), and upserts them into the Supabase
+cwp_documents table.
 
 Usage:
     # OneDrive mode (requires Azure app registration):
@@ -20,7 +21,6 @@ Run `python ingest.py --help` for all options.
 """
 
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -29,6 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator
 
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -40,16 +41,21 @@ ONEDRIVE_CLIENT_SECRET = os.getenv("ONEDRIVE_CLIENT_SECRET")
 ONEDRIVE_TENANT_ID     = os.getenv("ONEDRIVE_TENANT_ID")
 ONEDRIVE_FOLDER_PATH   = os.getenv("ONEDRIVE_FOLDER_PATH", "/CWP Precedents")
 
-OPENAI_API_KEY         = os.getenv("OPENAI_API_KEY")
-SUPABASE_URL           = os.getenv("SUPABASE_URL")
+GEMINI_API_KEY         = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
+SUPABASE_URL           = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL")
 SUPABASE_SERVICE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-EMBEDDING_MODEL        = "text-embedding-3-small"
-EMBEDDING_DIMENSION    = 1536
+EMBEDDING_MODEL        = "text-embedding-004"   # Gemini — 768-dim
+EMBEDDING_DIMENSION    = 768
 CHUNK_SIZE             = 1000   # characters (~250 tokens)
 CHUNK_OVERLAP          = 200    # characters — ensures clauses don't get cut
-BATCH_SIZE             = 50     # embeddings per OpenAI request
+BATCH_SIZE             = 100    # embeddings per Gemini batchEmbedContents request
 TMP_DIR                = "/tmp/cwp_ingestion"
+
+GEMINI_EMBED_URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{EMBEDDING_MODEL}:batchEmbedContents"
+)
 
 # Partner name lookup by folder keyword
 PARTNER_MAP = {
@@ -64,7 +70,7 @@ PARTNER_MAP = {
 
 def check_dependencies():
     missing = []
-    for pkg in ["openai", "supabase", "langchain_community", "unstructured", "docx2txt", "dotenv"]:
+    for pkg in ["supabase", "langchain_community", "unstructured", "docx2txt", "dotenv", "requests"]:
         try:
             __import__(pkg.replace("-", "_"))
         except ImportError:
@@ -125,36 +131,53 @@ def chunk_text(text: str) -> list[str]:
         is_separator_regex=False,
     )
     chunks = splitter.split_text(text)
-    # Filter out noise
     return [c.strip() for c in chunks if len(c.strip()) > 80]
 
-# ─── Embedding ────────────────────────────────────────────────────────────────
+# ─── Embedding via Gemini ─────────────────────────────────────────────────────
 
-def embed_batch(texts: list[str], client) -> list[list[float]]:
-    """Embed a batch of texts. Retries once on rate-limit."""
+def embed_batch(texts: list[str]) -> list[list[float]]:
+    """
+    Embed a batch of texts using Gemini text-embedding-004.
+    Uses batchEmbedContents REST endpoint. Retries once on rate-limit (429).
+    Returns a list of 768-dim embedding vectors.
+    """
+    payload = {
+        "requests": [
+            {
+                "model": f"models/{EMBEDDING_MODEL}",
+                "content": {"parts": [{"text": t}]},
+                "taskType": "RETRIEVAL_DOCUMENT",
+            }
+            for t in texts
+        ]
+    }
+
     for attempt in range(2):
-        try:
-            response = client.embeddings.create(
-                input=texts,
-                model=EMBEDDING_MODEL,
-            )
-            return [item.embedding for item in response.data]
-        except Exception as e:
-            if attempt == 0 and "rate" in str(e).lower():
-                print("    [rate limit] Waiting 20s...")
-                time.sleep(20)
-            else:
-                raise
+        resp = requests.post(
+            GEMINI_EMBED_URL,
+            params={"key": GEMINI_API_KEY},
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code == 429 and attempt == 0:
+            print("    [rate limit] Waiting 30s...")
+            time.sleep(30)
+            continue
+        resp.raise_for_status()
+        data = resp.json()
+        return [e["values"] for e in data["embeddings"]]
+
+    raise RuntimeError("Gemini embedding request failed after retry.")
 
 
-def embed_all(chunks: list[str], client) -> list[list[float]]:
+def embed_all(chunks: list[str]) -> list[list[float]]:
     """Embed all chunks in batches."""
     all_embeddings = []
     for i in range(0, len(chunks), BATCH_SIZE):
         batch = chunks[i : i + BATCH_SIZE]
-        all_embeddings.extend(embed_batch(batch, client))
+        all_embeddings.extend(embed_batch(batch))
         if i + BATCH_SIZE < len(chunks):
-            time.sleep(0.5)  # be gentle with the API
+            time.sleep(0.3)
     return all_embeddings
 
 # ─── Supabase Upsert ─────────────────────────────────────────────────────────
@@ -272,15 +295,14 @@ def iter_onedrive_files(folder_path: str) -> Generator[dict, None, None]:
 def main(args):
     check_dependencies()
 
-    from openai import OpenAI
     from supabase import create_client
 
     # Validate config
     errors = []
-    if not OPENAI_API_KEY:
-        errors.append("OPENAI_API_KEY is not set")
+    if not GEMINI_API_KEY:
+        errors.append("GEMINI_API_KEY is not set (also checks VITE_GEMINI_API_KEY)")
     if not SUPABASE_URL:
-        errors.append("SUPABASE_URL is not set")
+        errors.append("SUPABASE_URL is not set (also checks VITE_SUPABASE_URL)")
     if not SUPABASE_SERVICE_KEY:
         errors.append("SUPABASE_SERVICE_ROLE_KEY is not set")
     if args.source == "onedrive" and not all([ONEDRIVE_CLIENT_ID, ONEDRIVE_CLIENT_SECRET, ONEDRIVE_TENANT_ID]):
@@ -290,19 +312,17 @@ def main(args):
             print(f"[config error] {e}")
         sys.exit(1)
 
-    openai_client = OpenAI(api_key=OPENAI_API_KEY)
     supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     print()
     print("=" * 60)
     print("  Clearwater Intelligence — Document Ingestion")
-    print(f"  Source : {args.source.upper()}")
-    print(f"  Model  : {EMBEDDING_MODEL}")
-    print(f"  Chunks : {CHUNK_SIZE} chars / {CHUNK_OVERLAP} overlap")
+    print(f"  Source    : {args.source.upper()}")
+    print(f"  Embeddings: Gemini {EMBEDDING_MODEL} ({EMBEDDING_DIMENSION}-dim)")
+    print(f"  Chunks    : {CHUNK_SIZE} chars / {CHUNK_OVERLAP} overlap")
     print("=" * 60)
     print()
 
-    # Choose file source
     if args.source == "onedrive":
         file_iter = iter_onedrive_files(ONEDRIVE_FOLDER_PATH)
     else:
@@ -322,20 +342,17 @@ def main(args):
 
         print(f"→ {folder_path}/{file_name}")
 
-        # Deduplication check
         if not args.force and is_already_ingested(file_name, supabase):
             print("  [skip] Already ingested — use --force to re-ingest\n")
             skipped += 1
             continue
 
         try:
-            # Extract text
             raw_text = load_document(local_path)
             if len(raw_text.strip()) < 100:
                 print("  [skip] Too little content extracted\n")
                 continue
 
-            # Chunk
             chunks = chunk_text(raw_text)
             if not chunks:
                 print("  [skip] No usable chunks after splitting\n")
@@ -343,11 +360,9 @@ def main(args):
 
             print(f"  {len(chunks)} chunks extracted")
 
-            # Embed
-            embeddings = embed_all(chunks, openai_client)
-            print(f"  {len(embeddings)} embeddings generated")
+            embeddings = embed_all(chunks)
+            print(f"  {len(embeddings)} embeddings generated ({EMBEDDING_DIMENSION}-dim)")
 
-            # Upsert
             metadata = {
                 "file_name": file_name,
                 "folder_path": folder_path,
@@ -365,7 +380,6 @@ def main(args):
             continue
 
         finally:
-            # Clean up OneDrive temp files
             if args.source == "onedrive" and os.path.exists(local_path):
                 os.remove(local_path)
 

@@ -30,12 +30,9 @@ const COLS = [
         ],
     },
     {
-        heading: 'Contact',
+        heading: 'Digital Desk',
         links: [
-            { label: 'Intelligence Desk', to: '/contact' },
-            { label: 'New Matter Enquiry', to: '/contact' },
-            { label: '66 Bank Road, Ado-Ekiti, Ekiti State', to: '#' },
-            { label: 'Ado-Ekiti, Nigeria', to: '#' },
+            { label: 'Clearwater Intelligence (CWI)', to: '/contact' },
             { label: 'intelligence@cwplegal.africa', to: 'mailto:intelligence@cwplegal.africa' },
         ],
     },

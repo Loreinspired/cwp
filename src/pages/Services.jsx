@@ -29,7 +29,7 @@ export default function Services() {
                         What We Do
                     </h1>
                     <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', maxWidth: '560px', lineHeight: 1.8 }}>
-                        Clearwater Partners operates across five integrated practice areas, each anchored in deep Nigerian commercial law expertise and delivered through our alliance network across Nigeria and West Africa.
+                        We represent the full commercial spectrum — from sole proprietors and startups to SMEs, corporates, and multinationals — across five integrated practice areas, each grounded in Nigerian law and delivered through the Clearwater Network.
                     </p>
                 </div>
             </section>
