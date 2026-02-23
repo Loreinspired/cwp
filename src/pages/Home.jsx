@@ -63,8 +63,7 @@ const TRUST_ITEMS = [
     { label: 'Nigerian Bar Association', sub: 'Member' },
     { label: 'NICArb · ICC', sub: 'Arbitration Practice' },
     { label: 'CBN · SEC Advisory', sub: 'Regulatory Practice' },
-    { label: 'LSE · BL, Nigerian Law School', sub: 'Academic Credentials' },
-    { label: 'NDPC Registered', sub: 'Data Protection' },
+    { label: 'Data Privacy Lawyers Association of Nigeria', sub: 'Member' },
 ];
 
 function TrustBar() {
