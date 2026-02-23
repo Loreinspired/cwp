@@ -1,0 +1,21 @@
+# Clearwater Intelligence — Ingestion Pipeline Dependencies
+# Install: pip install -r requirements.txt
+
+# Core
+openai>=1.35.0
+supabase>=2.4.0
+python-dotenv>=1.0.0
+
+# Document Parsing
+langchain-community>=0.2.0
+langchain>=0.2.0
+unstructured[pdf]>=0.14.0    # UnstructuredPDFLoader
+docx2txt>=0.8                 # Docx2txtLoader
+python-docx>=1.1.0
+
+# OneDrive (only needed if using --source=onedrive)
+O365>=2.0.35
+
+# Utilities
+tiktoken>=0.7.0               # Token counting
+tqdm>=4.66.0                  # Progress bars

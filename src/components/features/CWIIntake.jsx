@@ -104,6 +104,74 @@ export default function CWIIntake({ heroMode = false }) {
         // Dismiss mobile keyboard cleanly after send
         textareaRef.current?.blur();
 
+    // ── RAG path ────────────────────────────────────────────────────────────
+    const runRAGAnalysis = async () => {
+        setStep(4);
+        setStreamedText('');
+        setSources([]);
+
+        const clarifications = questions.length > 0
+            ? questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || '(not provided)'}`).join('\n\n')
+            : null;
+
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        try {
+            const res = await fetch(CWI_EDGE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scenario: scenario.trim(), email, clarifications, mode: 'analyze',
+                }),
+                signal: controller.signal,
+            });
+
+            if (!res.ok) {
+                const e = await res.json().catch(() => ({}));
+                throw new Error(e.error || `Server error ${res.status}`);
+            }
+
+            const srcHeader = res.headers.get('X-CWI-Sources');
+            if (srcHeader) try { setSources(JSON.parse(srcHeader)); } catch { /**/ }
+
+            const reader  = res.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText  = '';
+
+            outer: while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const lines = decoder.decode(value, { stream: true }).split('\n');
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+                    const payload = line.slice(5).trim();
+                    if (payload === '[DONE]') break outer;
+                    try {
+                        const delta = JSON.parse(payload).choices?.[0]?.delta?.content || '';
+                        fullText += delta;
+                        setStreamedText(fullText);
+                    } catch { /**/ }
+                }
+            }
+
+            // Log session (non-blocking)
+            logCWISession({
+                email, query: scenario.trim(), clarifications, response: fullText,
+                sources: srcHeader ? JSON.parse(srcHeader) : [],
+                actionItems: extractActionItems(fullText),
+            }).catch(() => {});
+
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                setError(err.message || 'Connection failed. Please try again.');
+                setStep(3);
+            }
+        }
+    };
+
+    // ── Gemini fallback ─────────────────────────────────────────────────────
+    const runGeminiFallback = async () => {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
             setMessages([...newMessages, { role: 'model', content: 'Configuration error — please contact intelligence@cwplegal.africa directly.' }]);
@@ -332,5 +400,38 @@ export default function CWIIntake({ heroMode = false }) {
             </h2>
             {chatUI}
         </section>
+    );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function extractActionItems(text) {
+    if (!text) return [];
+    const match = text.match(/\*{0,2}Action Items?\*{0,2}:?\n+([\s\S]*?)(?:\n{2,}\*{0,2}Disclaimer|\n{2,}\*{0,2}$|$)/i);
+    if (!match) return [];
+    return match[1]
+        .split('\n')
+        .map(l => l.replace(/^\d+\.\s*/, '').replace(/^\*+\s*/, '').trim())
+        .filter(l => l.length > 10)
+        .slice(0, 5);
+}
+
+const BASE_INPUT = {
+    width: '100%',
+    background: 'var(--cwp-raised)',
+    border: '1px solid var(--cwp-border)',
+    color: 'var(--cwp-text)',
+    fontSize: '13px',
+    fontFamily: 'Inter, sans-serif',
+    display: 'block',
+};
+
+const SPIN = { animation: 'cwi-spin 1s linear infinite' };
+
+function Err({ msg }) {
+    return (
+        <p style={{ fontSize: '12px', color: '#e07070', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={12} style={{ flexShrink: 0 }} /> {msg}
+        </p>
     );
 }
