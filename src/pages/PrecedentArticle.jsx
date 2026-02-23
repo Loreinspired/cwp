@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // ← Added for SEO Injection
 import { ArrowLeft } from 'lucide-react';
 import { articles } from '../data/articles';
 import { partners } from '../data/partners';
@@ -14,8 +15,71 @@ export default function PrecedentArticle() {
 
     const relatedArticles = articles.filter(a => article.related?.includes(a.slug)).slice(0, 3);
 
+    // ─── SEO & AI PREPARATION ──────────────────────────────────────────────
+    
+    // Safely strip markdown asterisks and line breaks to create a clean meta description
+    const plainTextBody = article.body.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n/g, ' ');
+    const seoDescription = article.excerpt || (plainTextBody.length > 150 ? `${plainTextBody.substring(0, 150)}...` : plainTextBody);
+    const seoTitle = `${article.title} | Clearwater Partners`;
+
+    // Construct the mathematically verifiable schema for AI Crawlers
+    const generateSchema = () => {
+        return JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LegalArticle",
+            "headline": article.title,
+            "description": seoDescription,
+            "image": article.image || "https://cwplegal.africa/cwp-favicon.svg", // Fallback image
+            "datePublished": article.date,
+            "author": {
+                "@type": "Person",
+                "name": article.author,
+                "url": "https://cwplegal.africa/about"
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Clearwater Partners",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://cwplegal.africa/cwp-logo-icon.svg"
+                }
+            },
+            "inLanguage": "en-NG",
+            "isAccessibleForFree": "True",
+            "about": [
+                {
+                    "@type": "Thing",
+                    "name": article.category
+                },
+                ...(article.tags || []).map(tag => ({
+                    "@type": "Thing",
+                    "name": tag
+                }))
+            ]
+        });
+    };
+
     return (
         <div style={{ paddingTop: '64px' }}>
+            
+            {/* ─── AI & SEO HEAD INJECTION ───────────────────────────────────── */}
+            <Helmet>
+                <title>{seoTitle}</title>
+                <meta name="description" content={seoDescription} />
+                
+                {/* Open Graph for LinkedIn/Twitter formatting */}
+                <meta property="og:title" content={seoTitle} />
+                <meta property="og:description" content={seoDescription} />
+                <meta property="og:type" content="article" />
+                <meta property="og:url" content={`https://cwplegal.africa/precedent/${article.slug}`} />
+                {article.image && <meta property="og:image" content={article.image} />}
+                
+                {/* The Machine-Readable Payload for GPTBot / Google-Extended */}
+                <script type="application/ld+json">
+                    {generateSchema()}
+                </script>
+            </Helmet>
+
             {/* Back nav */}
             <div style={{ padding: '24px 40px', borderBottom: '1px solid var(--cwp-border)', background: 'var(--cwp-ink)' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
