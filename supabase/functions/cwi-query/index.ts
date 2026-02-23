@@ -2,9 +2,12 @@
 // Clearwater Intelligence — RAG Edge Function
 // supabase/functions/cwi-query/index.ts
 //
+// Gemini-only: text-embedding-004 for retrieval, gemini-2.5-flash
+// for both drilling questions and final analysis streaming.
+//
 // Modes:
-//   drill   → generate 2 high-value clarifying questions
-//   analyze → embed query, similarity search, stream GPT-4o response
+//   drill   → 2 clarifying questions (JSON)
+//   analyze → embed → similarity search → stream Gemini response
 // ============================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -16,11 +19,15 @@ const CORS = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const GEMINI_MODEL   = "gemini-2.5-flash";
+const EMBED_MODEL    = "text-embedding-004";
+const GEMINI_BASE    = "https://generativelanguage.googleapis.com/v1beta/models";
+
 // ─── System Prompts ───────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are the Clearwater Intelligence Desk — the AI advisory interface of Clearwater Partners, a Nigerian commercial law firm headquartered in Ado-Ekiti, Ekiti State, with network coverage across Nigeria. The firm specialises in corporate advisory, capital markets, M&A, regulatory compliance, and dispute resolution.
+const SYSTEM_PROMPT = `You are the Clearwater Intelligence Desk — the AI advisory interface of Clearwater Partners, a Nigerian commercial law firm headquartered in Ado-Ekiti, Ekiti State, with network coverage across Nigeria. The firm specialises in corporate advisory, capital markets, M&A, regulatory compliance, and dispute resolution. We represent the full commercial spectrum — from sole proprietors and startups to multinationals and institutions.
 
-You are a RAG-augmented legal reasoning engine. You draw your analysis first from the firm's internal precedents (provided below), and second from Nigerian statutes and regulatory frameworks.
+You are a RAG-augmented legal reasoning engine. Draw analysis first from the firm's internal precedents (provided below), then from Nigerian statutes and regulatory frameworks.
 
 KEY STATUTORY REFERENCES:
 - CAMA 2020 (Companies and Allied Matters Act) and the Companies Regulations 2021
@@ -37,13 +44,13 @@ INTERNAL PRECEDENTS (retrieved from firm documents):
 {context}
 
 CORE RULES:
-1. ACCURACY FIRST — If a precedent from the firm's documents is relevant, cite the specific file name in your analysis (e.g. "per the firm's precedent in [file_name]..."). Never cite a document that is not in the context above.
-2. NO HALLUCINATIONS — If the matter is not addressed in the provided context or Nigerian statutes, explicitly state: "This specific issue is not covered in the firm's current internal precedents or my statutory database — a partner would need to advise directly."
-3. HUMAN-CENTRIC LENS — Analyse legal problems through the client's commercial objectives and business health, not merely technical compliance. Ask: what outcome does the client actually need?
-4. PRINCIPAL-LED TONE — Authoritative, analytically precise, and reassuring. Direct. Never casual, speculative, or verbose.
-5. NIGERIAN REGULATORY PRECISION — Always specify which regulator (CBN, SEC, CAC, FIRS, NDPC, etc.) and which statutory provision governs each point.
+1. ACCURACY FIRST — If a precedent is relevant, cite the specific file name (e.g. "per the firm's precedent in [file_name]..."). Never cite a document not in the context above.
+2. NO HALLUCINATIONS — If a matter is not addressed in the provided context or Nigerian statutes, state: "This specific issue is not covered in the firm's current internal precedents — a partner would need to advise directly."
+3. HUMAN-CENTRIC LENS — Analyse through the client's commercial objectives and business health, not merely technical compliance.
+4. PRINCIPAL-LED TONE — Authoritative, analytically precise, and reassuring. Direct. Never casual.
+5. NIGERIAN REGULATORY PRECISION — Specify which regulator and which statutory provision governs each point.
 
-MANDATORY RESPONSE STRUCTURE (always follow this format):
+MANDATORY RESPONSE STRUCTURE:
 
 **Legal Issue**
 One sentence identifying the core legal question.
@@ -66,7 +73,7 @@ This preliminary analysis is provided for orientation purposes only and does not
 
 const DRILLING_PROMPT = `You are the intake assistant at Clearwater Intelligence Desk — the AI interface of Clearwater Partners, a Nigerian commercial law firm.
 
-A prospective client has described a legal matter. Before providing a full analysis, you must generate exactly 2 high-value clarifying questions. The questions must:
+A prospective client has described a legal matter. Generate exactly 2 high-value clarifying questions. The questions must:
 - Be specific to the matter described (not generic)
 - Target the key legal distinctions that determine the applicable Nigerian statutory framework (e.g. public vs. private company, nature of the asset, existing encumbrances, jurisdictional considerations)
 - Draw on Nigerian law specifics: CAMA 2020, CBN/SEC licensing, Land Use Act, Ekiti State Laws, etc.
@@ -78,6 +85,50 @@ Respond ONLY with valid JSON in this exact format, no other text:
 Matter submitted by client:
 {scenario}`;
 
+// ─── Gemini Helpers ───────────────────────────────────────────────────────────
+
+async function geminiGenerate(
+  apiKey: string,
+  systemInstruction: string,
+  userMessage: string,
+  stream = false,
+): Promise<Response> {
+  const endpoint = stream
+    ? `${GEMINI_BASE}/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${apiKey}`
+    : `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  return fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ role: "user", parts: [{ text: userMessage }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 1400 },
+    }),
+  });
+}
+
+async function geminiEmbed(apiKey: string, text: string): Promise<number[]> {
+  const res = await fetch(
+    `${GEMINI_BASE}/${EMBED_MODEL}:embedContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: `models/${EMBED_MODEL}`,
+        content: { parts: [{ text }] },
+        taskType: "RETRIEVAL_QUERY",
+      }),
+    },
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any)?.error?.message || `Gemini embed error ${res.status}`);
+  }
+  const data = await res.json();
+  return data.embedding?.values ?? [];
+}
+
 // ─── Serve ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -85,11 +136,15 @@ serve(async (req) => {
     return new Response("ok", { headers: CORS });
   }
 
+  const geminiKey = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("VITE_GEMINI_API_KEY");
+  if (!geminiKey) {
+    return json({ error: "GEMINI_API_KEY is not configured on this function." }, 500);
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
-  const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
 
   try {
     const { scenario, email, clarifications, mode } = await req.json();
@@ -98,57 +153,43 @@ serve(async (req) => {
       return json({ error: "scenario is required" }, 400);
     }
 
-    // ── MODE: drill ──────────────────────────────────────────
+    // ── MODE: drill ──────────────────────────────────────────────────────────
     if (mode === "drill") {
-      const drillingRes = await openai(openaiKey, {
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: DRILLING_PROMPT.replace("{scenario}", scenario.slice(0, 1500)),
-          },
-        ],
-        temperature: 0.4,
-        max_tokens: 300,
-        response_format: { type: "json_object" },
-      });
+      const prompt = DRILLING_PROMPT.replace("{scenario}", scenario.slice(0, 1500));
+      const drillingRes = await geminiGenerate(geminiKey, "", prompt, false);
 
-      const raw = drillingRes.choices?.[0]?.message?.content || "{}";
+      if (!drillingRes.ok) {
+        const err = await drillingRes.json().catch(() => ({}));
+        throw new Error((err as any)?.error?.message || `Gemini drill error ${drillingRes.status}`);
+      }
+
+      const data = await drillingRes.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
       let questions: string[] = [];
       try {
-        questions = JSON.parse(raw).questions || [];
+        // Strip markdown fences if Gemini wraps the JSON
+        const cleaned = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/, "").trim();
+        questions = JSON.parse(cleaned).questions || [];
       } catch { /* return empty */ }
 
       return json({ questions });
     }
 
-    // ── MODE: analyze (RAG + stream) ─────────────────────────
+    // ── MODE: analyze (RAG + stream) ─────────────────────────────────────────
 
-    // 1. Build the full query string
+    // 1. Build full query string
     const fullQuery = clarifications
       ? `${scenario.trim()}\n\nClient clarifications:\n${clarifications}`
       : scenario.trim();
 
-    // 2. Embed the query
-    const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        input: fullQuery.slice(0, 8000),
-        model: "text-embedding-3-small",
-      }),
-    });
-    const embedData = await embedRes.json();
-    const queryEmbedding = embedData.data?.[0]?.embedding;
+    // 2. Embed the query via Gemini text-embedding-004
+    const queryEmbedding = await geminiEmbed(geminiKey, fullQuery.slice(0, 8000));
 
-    if (!queryEmbedding) {
-      throw new Error("Embedding generation failed — check your OpenAI API key.");
+    if (!queryEmbedding.length) {
+      throw new Error("Embedding generation returned empty vector.");
     }
 
-    // 3. Similarity search
+    // 3. Similarity search in Supabase pgvector
     let context =
       "No directly relevant internal precedents found. Respond based on Nigerian statutory law and general commercial law principles.";
     const sources: string[] = [];
@@ -159,7 +200,7 @@ serve(async (req) => {
         query_embedding: queryEmbedding,
         match_count: 5,
         match_threshold: 0.65,
-      }
+      },
     );
 
     if (matchErr) {
@@ -179,7 +220,7 @@ serve(async (req) => {
         .join("\n\n---\n\n");
     }
 
-    // 4. Log session to Supabase (fire-and-forget — don't block the stream)
+    // 4. Log session (fire-and-forget)
     if (email) {
       supabase
         .from("cwi_sessions")
@@ -195,40 +236,22 @@ serve(async (req) => {
         });
     }
 
-    // 5. Build final prompt and stream GPT-4o
+    // 5. Build prompt and stream via Gemini
     const systemPrompt = SYSTEM_PROMPT.replace("{context}", context);
-    const userMessage =
-      clarifications
-        ? `Client matter:\n${scenario}\n\nClient's clarifications:\n${clarifications}`
-        : `Client matter:\n${scenario}`;
+    const userMessage = clarifications
+      ? `Client matter:\n${scenario}\n\nClient's clarifications:\n${clarifications}`
+      : `Client matter:\n${scenario}`;
 
-    const completionRes = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0.2,
-          max_tokens: 1400,
-          stream: true,
-        }),
-      }
-    );
+    const completionRes = await geminiGenerate(geminiKey, systemPrompt, userMessage, true);
 
     if (!completionRes.ok) {
       const err = await completionRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `OpenAI error ${completionRes.status}`);
+      throw new Error((err as any)?.error?.message || `Gemini stream error ${completionRes.status}`);
     }
 
-    // 6. Pipe the OpenAI SSE stream back to the client
+    // 6. Translate Gemini SSE → OpenAI-compatible SSE for the frontend
+    //    Gemini SSE lines: data: {"candidates":[{"content":{"parts":[{"text":"..."}]}}]}
+    //    We emit:          data: {"choices":[{"delta":{"content":"..."}}]}
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -241,12 +264,22 @@ serve(async (req) => {
             if (done) break;
 
             const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
-            for (const line of lines) {
+            for (const line of chunk.split("\n")) {
               const trimmed = line.trim();
-              if (trimmed.startsWith("data:")) {
-                controller.enqueue(encoder.encode(trimmed + "\n\n"));
-              }
+              if (!trimmed.startsWith("data:")) continue;
+              const payload = trimmed.slice(5).trim();
+              if (!payload || payload === "[DONE]") continue;
+
+              try {
+                const parsed = JSON.parse(payload);
+                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  const compat = JSON.stringify({
+                    choices: [{ delta: { content: text } }],
+                  });
+                  controller.enqueue(encoder.encode(`data: ${compat}\n\n`));
+                }
+              } catch { /* skip malformed lines */ }
             }
           }
         } finally {
@@ -278,20 +311,4 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   });
-}
-
-async function openai(key: string, body: Record<string, unknown>) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `OpenAI error ${res.status}`);
-  }
-  return res.json();
 }

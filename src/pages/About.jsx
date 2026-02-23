@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import AllianceNetwork from '../components/features/AllianceNetwork';
+import AlumniGrid from '../components/features/AlumniGrid';
 
 const VALUES = [
     {
@@ -297,46 +299,39 @@ export default function About() {
                 </div>
             </section>
 
-            {/* ── ALUMNI BADGE ────────────────────────────────────────────── */}
-            <section style={{ borderTop: '1px solid var(--cwp-border)', padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '60px', alignItems: 'center' }} className="badge-grid">
-                    <div style={{ borderRight: '1px solid var(--cwp-border)', paddingRight: '60px' }}>
-                        <p style={{
-                            fontSize: '9px', fontWeight: 700, letterSpacing: '0.25em',
-                            textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '16px',
-                        }}>The Alumni Network</p>
-                        <div style={{
-                            width: '80px', height: '80px', border: '2px solid var(--cwp-accent)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px',
-                        }}>
-                            <span style={{
-                                fontFamily: "'Playfair Display', serif", fontSize: '11px',
-                                fontWeight: 400, color: 'var(--cwp-accent)', letterSpacing: '0.1em',
-                                textAlign: 'center', lineHeight: 1.4,
-                            }}>CWP<br />Alumni</span>
+            {/* ── ALLIANCE NETWORK ─────────────────────────────────────── */}
+            <section style={{ borderTop: '1px solid var(--cwp-border)', padding: '80px 48px', background: 'var(--cwp-ink)' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
+                        <div>
+                            <p style={{
+                                fontSize: '9px', fontWeight: 700, letterSpacing: '0.25em',
+                                textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '12px',
+                            }}>
+                                The Clearwater Network
+                            </p>
+                            <h2 style={{
+                                fontFamily: "'Playfair Display', serif",
+                                fontSize: 'clamp(22px, 3vw, 36px)',
+                                fontWeight: 400,
+                                color: 'var(--cwp-white)',
+                                lineHeight: 1.2,
+                                maxWidth: '480px',
+                            }}>
+                                One relationship. Coordinated across Nigeria.
+                            </h2>
                         </div>
-                        <p style={{ fontSize: '11px', color: 'var(--cwp-muted)', lineHeight: 1.6 }}>
-                            A designation people pursue — not simply receive.
+                        <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', maxWidth: '340px', lineHeight: 1.75 }}>
+                            Alliance firms within the Clearwater Network operate as a unified counsel platform — sharing mandates, referrals, and institutional knowledge across jurisdictions.
                         </p>
                     </div>
-                    <div>
-                        <h2 style={{
-                            fontFamily: "'Playfair Display', serif", fontSize: 'clamp(22px, 3vw, 38px)',
-                            fontWeight: 400, color: 'var(--cwp-white)', lineHeight: 1.2, marginBottom: '24px',
-                        }}>
-                            "People wear their association with Clearwater as a mark."
-                        </h2>
-                        <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', lineHeight: 1.8, marginBottom: '16px' }}>
-                            The lawyers who have passed through this firm go on to hold some of the most consequential legal roles in Nigeria — Head of Legal at leading institutions, founders of their own practices, and senior counsel at firms across the continent.
-                        </p>
-                        <Link to="/network" style={{
-                            display: 'inline-block', marginTop: '24px', fontSize: '11px', fontWeight: 700,
-                            letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--cwp-accent)',
-                        }}>
-                            Meet the Network →
-                        </Link>
-                    </div>
+                    <AllianceNetwork />
                 </div>
+            </section>
+
+            {/* ── ALUMNI GRID ──────────────────────────────────────────────── */}
+            <section style={{ borderTop: '1px solid var(--cwp-border)', padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
+                <AlumniGrid />
             </section>
 
             <style>{`

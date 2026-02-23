@@ -296,11 +296,11 @@ export default function Home() {
                             marginBottom: '28px',
                         }}>
                             Commercial Law<br />
-                            <em style={{ color: 'var(--cwp-accent)' }}>for institutions</em><br />
-                            that move markets.
+                            <em style={{ color: 'var(--cwp-accent)' }}>across the full</em><br />
+                            commercial spectrum.
                         </h1>
                         <p style={{ fontSize: '14px', color: 'var(--cwp-muted)', lineHeight: 1.8, marginBottom: '36px', maxWidth: '380px' }}>
-                            Describe your matter. Get a substantive preliminary analysis in seconds — then engage us formally.
+                            From sole proprietors and growing businesses to institutions and multinationals — Clearwater Partners delivers partner-led commercial law for every mandate that matters.
                         </p>
                     </div>
 
