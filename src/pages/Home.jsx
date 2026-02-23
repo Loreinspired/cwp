@@ -7,7 +7,6 @@ import CWIIntake from '../components/features/CWIIntake';
 import ServicesFramework from '../components/features/ServicesFramework';
 import PrecedentGrid from '../components/features/PrecedentGrid';
 import GridDots from '../components/ui/GridDots';
-import NewsletterSignup from '../components/features/NewsletterSignup';
 import { personas } from '../data/personas';
 
 // ─── Ticker ──────────────────────────────────────────────────────────────────
