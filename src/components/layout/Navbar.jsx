@@ -3,12 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
+// Removed 'Contact' to eliminate cognitive friction. 
+// The Intelligence Desk button handles all routing to /contact.
 const NAV_LINKS = [
     { label: 'About', to: '/about' },
     { label: 'Services', to: '/services' },
     { label: 'Network', to: '/network' },
     { label: 'Precedent', to: '/precedent' },
-    { label: 'Contact', to: '/contact' },
 ];
 
 export default function Navbar() {
@@ -23,7 +24,6 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    // Close menu on route change
     useEffect(() => setMenuOpen(false), [location.pathname]);
 
     const isDark = theme === 'dark';
@@ -49,22 +49,10 @@ export default function Navbar() {
                 }}
             >
                 {/* Logo */}
-                <Link
-                    to="/"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        textDecoration: 'none',
-                    }}
-                >
-                    {/* CWP Logomark — C arc + W + P */}
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
                     <svg width="36" height="34" viewBox="0 0 40 38" fill="none" style={{ flexShrink: 0 }}>
-                        {/* C */}
                         <path d="M18 5 C18 5 7 5 7 13.5 C7 22 18 22 18 17" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" />
-                        {/* W */}
                         <path d="M15.5 17 L19 29 L23 18.5 L27 29 L30.5 17" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                        {/* P */}
                         <path d="M30.5 6 L30.5 20" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" />
                         <path d="M30.5 6 C30.5 6 38.5 6 38.5 13 C38.5 20 30.5 20 30.5 20" stroke="var(--cwp-white)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -97,34 +85,20 @@ export default function Navbar() {
                         );
                     })}
 
-                    {/* Theme toggle */}
                     <button
                         onClick={toggleTheme}
                         title={isDark ? 'Switch to day mode' : 'Switch to night mode'}
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px',
+                            display: 'flex', alignItems: 'center', gap: '5px',
                             color: isOverridden ? 'var(--cwp-accent)' : 'var(--cwp-muted)',
-                            padding: '4px',
-                            transition: 'color 0.2s',
-                            position: 'relative',
+                            padding: '4px', transition: 'color 0.2s', position: 'relative',
                         }}
                     >
                         {isDark ? <Sun size={15} /> : <Moon size={15} />}
-                        {isOverridden && (
-                            <span style={{
-                                position: 'absolute',
-                                top: 0,
-                                right: 0,
-                                width: '5px',
-                                height: '5px',
-                                borderRadius: '50%',
-                                background: 'var(--cwp-accent)',
-                            }} />
-                        )}
+                        {isOverridden && <span style={{ position: 'absolute', top: 0, right: 0, width: '5px', height: '5px', borderRadius: '50%', background: 'var(--cwp-accent)' }} />}
                     </button>
 
+                    {/* Primary CTA */}
                     <Link
                         to="/contact"
                         style={{
@@ -132,10 +106,11 @@ export default function Navbar() {
                             fontWeight: 700,
                             letterSpacing: '0.18em',
                             textTransform: 'uppercase',
-                            padding: '8px 18px',
+                            padding: '10px 20px',
                             background: 'var(--cwp-white)',
                             color: 'var(--cwp-void)',
                             transition: 'opacity 0.2s',
+                            borderRadius: '2px',
                         }}
                     >
                         Intelligence Desk
@@ -157,9 +132,7 @@ export default function Navbar() {
             <div
                 style={{
                     position: 'fixed',
-                    top: '64px',
-                    left: 0,
-                    right: 0,
+                    top: '64px', left: 0, right: 0,
                     background: 'var(--cwp-ink)',
                     borderBottom: '1px solid var(--cwp-border)',
                     zIndex: 99,
@@ -173,12 +146,8 @@ export default function Navbar() {
                         key={to}
                         to={to}
                         style={{
-                            display: 'block',
-                            padding: '14px 0',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            letterSpacing: '0.18em',
-                            textTransform: 'uppercase',
+                            display: 'block', padding: '14px 0', fontSize: '12px', fontWeight: 600,
+                            letterSpacing: '0.18em', textTransform: 'uppercase',
                             color: location.pathname.startsWith(to) ? 'var(--cwp-white)' : 'var(--cwp-muted)',
                             borderBottom: '1px solid var(--cwp-border)',
                         }}
@@ -186,46 +155,41 @@ export default function Navbar() {
                         {label}
                     </Link>
                 ))}
+                
+                {/* Mobile CTA */}
+                <Link
+                    to="/contact"
+                    style={{
+                        display: 'block', padding: '14px 0', fontSize: '12px', fontWeight: 600,
+                        letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--cwp-accent)',
+                        borderBottom: '1px solid var(--cwp-border)',
+                    }}
+                >
+                    Intelligence Desk
+                </Link>
 
-                {/* Mobile theme toggle */}
                 <button
                     onClick={toggleTheme}
                     style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginTop: '20px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.12em',
-                        textTransform: 'uppercase',
-                        color: 'var(--cwp-muted)',
+                        display: 'flex', alignItems: 'center', gap: '10px', marginTop: '20px',
+                        fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em',
+                        textTransform: 'uppercase', color: 'var(--cwp-muted)',
                     }}
                 >
                     {isDark ? <Sun size={14} /> : <Moon size={14} />}
                     {isDark ? 'Day mode' : 'Night mode'}
-                    {isOverridden && (
-                        <span style={{
-                            fontSize: '9px',
-                            letterSpacing: '0.1em',
-                            color: 'var(--cwp-accent)',
-                            marginLeft: '4px',
-                        }}>
-                            (manual)
-                        </span>
-                    )}
                 </button>
             </div>
 
             <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-toggle { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .mobile-toggle { display: none !important; }
-        }
-      `}</style>
+                @media (max-width: 768px) {
+                  .desktop-nav { display: none !important; }
+                  .mobile-toggle { display: flex !important; }
+                }
+                @media (min-width: 769px) {
+                  .mobile-toggle { display: none !important; }
+                }
+            `}</style>
         </>
     );
 }
