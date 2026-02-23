@@ -3,8 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-// Removed 'Contact' to eliminate cognitive friction. 
-// The Intelligence Desk button handles all routing to /contact.
 const NAV_LINKS = [
     { label: 'About', to: '/about' },
     { label: 'Services', to: '/services' },
@@ -98,22 +96,49 @@ export default function Navbar() {
                         {isOverridden && <span style={{ position: 'absolute', top: 0, right: 0, width: '5px', height: '5px', borderRadius: '50%', background: 'var(--cwp-accent)' }} />}
                     </button>
 
-                    {/* Primary CTA */}
+                    {/* Primary CTA with Hover Swap */}
                     <Link
                         to="/contact"
+                        className="contact-cta"
                         style={{
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'var(--cwp-white)',
+                            color: 'var(--cwp-void)',
+                            borderRadius: '2px',
+                            textDecoration: 'none',
+                            overflow: 'hidden',
+                            width: '150px', 
+                            height: '36px'
+                        }}
+                    >
+                        <span className="cta-text-primary" style={{
+                            position: 'absolute',
                             fontSize: '9px',
                             fontWeight: 700,
                             letterSpacing: '0.18em',
                             textTransform: 'uppercase',
-                            padding: '10px 20px',
-                            background: 'var(--cwp-white)',
+                            transition: 'transform 0.3s ease, opacity 0.3s ease',
+                        }}>
+                            Contact
+                        </span>
+                        <span className="cta-text-hover" style={{
+                            position: 'absolute',
+                            fontSize: '8px',
+                            fontWeight: 700,
+                            letterSpacing: '0.15em',
+                            textTransform: 'uppercase',
                             color: 'var(--cwp-void)',
-                            transition: 'opacity 0.2s',
-                            borderRadius: '2px',
-                        }}
-                    >
-                        Intelligence Desk
+                            transform: 'translateY(20px)',
+                            opacity: 0,
+                            transition: 'transform 0.3s ease, opacity 0.3s ease',
+                            textAlign: 'center',
+                            lineHeight: '1.2'
+                        }}>
+                            Powered by<br />CWI SLM
+                        </span>
                     </Link>
                 </div>
 
@@ -156,7 +181,7 @@ export default function Navbar() {
                     </Link>
                 ))}
                 
-                {/* Mobile CTA */}
+                {/* Mobile CTA (Explicit text since hover doesn't work) */}
                 <Link
                     to="/contact"
                     style={{
@@ -165,7 +190,7 @@ export default function Navbar() {
                         borderBottom: '1px solid var(--cwp-border)',
                     }}
                 >
-                    Intelligence Desk
+                    Contact (CWI Desk)
                 </Link>
 
                 <button
@@ -188,6 +213,16 @@ export default function Navbar() {
                 }
                 @media (min-width: 769px) {
                   .mobile-toggle { display: none !important; }
+                }
+
+                /* Desktop Hover Animation Logic */
+                .contact-cta:hover .cta-text-primary {
+                    transform: translateY(-20px);
+                    opacity: 0;
+                }
+                .contact-cta:hover .cta-text-hover {
+                    transform: translateY(0);
+                    opacity: 1;
                 }
             `}</style>
         </>
