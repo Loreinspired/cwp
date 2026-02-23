@@ -71,7 +71,7 @@ export default function NewsletterSignup({ variant = 'banner' }) {
                             marginBottom: '12px',
                         }}
                     >
-                        Stay ahead of the regulatory curve.
+                        Intelligence across the commercial spectrum.
                     </h2>
                     <p
                         style={{
@@ -81,7 +81,7 @@ export default function NewsletterSignup({ variant = 'banner' }) {
                             maxWidth: '440px',
                         }}
                     >
-                        Monthly analysis on Nigerian commercial law — delivered to your inbox. No noise. No marketing. Just substance.
+                        Actionable analysis on Nigerian commercial law—curated for sole-proprietors, startups, and corporations. No noise. Just substance.
                     </p>
                 </div>
 

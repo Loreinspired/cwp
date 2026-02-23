@@ -7,7 +7,7 @@ import CWIIntake from '../components/features/CWIIntake';
 import ServicesFramework from '../components/features/ServicesFramework';
 import PrecedentGrid from '../components/features/PrecedentGrid';
 import GridDots from '../components/ui/GridDots';
-import NewsletterSignup from '../components/features/NewsletterSignup';
+// Newsletter import removed to prevent duplication
 import { personas } from '../data/personas';
 
 // ─── Ticker ──────────────────────────────────────────────────────────────────
@@ -31,7 +31,6 @@ function Ticker() {
             borderTop: '1px solid var(--cwp-border)',
             borderBottom: '1px solid var(--cwp-border)',
             padding: '10px 0',
-            marginBottom: '48px',
             position: 'relative',
             maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
             WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
@@ -64,15 +63,13 @@ const TRUST_ITEMS = [
     { label: 'Nigerian Bar Association', sub: 'Member' },
     { label: 'NICArb · ICC', sub: 'Arbitration Practice' },
     { label: 'CBN · SEC Advisory', sub: 'Regulatory Practice' },
-    { label: 'LSE · BL, Nigerian Law School', sub: 'Academic Credentials' },
-    { label: 'NDPC Registered', sub: 'Data Protection' },
+    { label: 'Data Privacy Lawyers Association of Nigeria', sub: 'Member' },
 ];
 
 function TrustBar() {
     return (
         <div style={{
             background: 'var(--cwp-ink)',
-            borderTop: '1px solid var(--cwp-border)',
             borderBottom: '1px solid var(--cwp-border)',
             padding: '24px 48px',
         }}>
@@ -243,8 +240,9 @@ function MobileStickyCTA() {
                 color: 'var(--cwp-void)',
                 textDecoration: 'none',
             }}>
+                {/* UX Fix: Branded mobile CTA */}
                 <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                    Enquire Now
+                    CWI Desk
                 </span>
             </Link>
         </div>
@@ -316,14 +314,32 @@ export default function Home() {
                             CWI · Clearwater Intelligence
                         </p>
                         <CWIIntake heroMode />
+                        
+                        {/* UX Fix: Hero Trust Anchor */}
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px', 
+                            marginTop: '20px',
+                        }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--cwp-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span style={{ fontSize: '9px', color: 'var(--cwp-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                Confidential & Secure
+                            </span>
+                        </div>
                     </div>
                 </div>
             </section>
 
+            {/* UX Fix: Actually rendering the TrustBar! */}
+            <TrustBar />
+
             {/* ── Ticker ─────────────────────────────────────────────────── */}
             <Ticker />
-
-
 
             {/* ── Why CWP ────────────────────────────────────────────────── */}
             <WhyCWP />
@@ -351,7 +367,7 @@ export default function Home() {
             </section>
 
             {/* ── Precedent Teaser ───────────────────────────────────────── */}
-            <section style={{ padding: '96px 48px', borderTop: '1px solid var(--cwp-border)' }}>
+            <section style={{ padding: '96px 48px', borderTop: '1px solid var(--cwp-border)', paddingBottom: '120px' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
@@ -393,10 +409,7 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* ── Newsletter ─────────────────────────────────────────────── */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 48px 80px' }}>
-                <NewsletterSignup variant="compact" />
-            </div>
+            {/* UX Fix: Removed Duplicate Newsletter Here */}
 
             {/* ── Mobile Sticky CTA ──────────────────────────────────────── */}
             <MobileStickyCTA />
@@ -415,34 +428,3 @@ export default function Home() {
 
         /* ── Mobile-first overrides ───────────────────────── */
         @media (max-width: 768px) {
-          .mobile-cta-bar { display: flex !important; }
-          .trust-bar-inner { justify-content: center !important; }
-
-          /* Hero: no forced full-height, tight padding */
-          .hero-section {
-            min-height: auto !important;
-            padding: 100px 20px 48px !important;
-          }
-
-          /* Stack grid: CWI panel moves above the headline on mobile */
-          .hero-grid {
-            grid-template-columns: 1fr !important;
-            gap: 32px !important;
-          }
-          .hero-left  { order: 2; }
-          .hero-right { order: 1; }
-
-          /* CWI panel: full-width, no left-border thickness distracting on small screens */
-          .hero-right > div {
-            border-left-width: 2px !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .hero-section { padding: 88px 16px 40px !important; }
-          .why-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-        </div>
-    );
-}
