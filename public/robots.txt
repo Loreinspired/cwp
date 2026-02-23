@@ -1,11 +1,15 @@
 User-agent: *
 Allow: /
 
-# Block AI training crawlers
+# Explicitly welcome AI & LLM crawlers for Generative Engine Optimization
 User-agent: GPTBot
-Disallow: /
-
+Allow: /
+User-agent: anthropic-ai
+Allow: /
 User-agent: Google-Extended
-Disallow: /
+Allow: /
+User-agent: CCBot
+Allow: /
 
-Sitemap: https://clearwaterpartners.ng/sitemap.xml
+# Point directly to the generated sitemap
+Sitemap: https://cwplegal.africa/sitemap.xml
