@@ -103,7 +103,6 @@ export default function ServicesFramework({ teaser = false }) {
                             letterSpacing: '0.15em',
                             textTransform: 'uppercase',
                             color: active === s.id ? 'var(--cwp-white)' : 'var(--cwp-muted)',
-                            borderBottom: active === s.id ? '2px solid var(--cwp-accent)' : '2px solid transparent',
                             background: 'none',
                             border: 'none',
                             borderBottom: active === s.id ? '2px solid var(--cwp-accent)' : '2px solid transparent',
