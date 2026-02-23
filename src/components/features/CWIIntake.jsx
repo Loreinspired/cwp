@@ -229,6 +229,9 @@ export default function CWIIntake({ heroMode = false }) {
         }
     };
 
+    runGeminiFallback();
+    };
+
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
