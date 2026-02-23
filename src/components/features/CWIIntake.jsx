@@ -1,93 +1,108 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Loader, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Send, Loader } from 'lucide-react';
 import SectionLabel from '../ui/SectionLabel';
 import Button from '../ui/Button';
-import { CWI_EDGE_URL, logCWISession } from '../../lib/supabase';
+import { saveCWISession } from '../../lib/supabase';
 
-// ─── Gemini fallback (used when Supabase is not yet configured) ───────────────
-const GEMINI_SYSTEM_PROMPT = `You are the Clearwater Intelligence Desk — the AI advisory interface of Clearwater Partners, a Nigerian commercial law firm headquartered in Ado-Ekiti, Ekiti State, specialising in corporate advisory, capital markets, M&A, and regulatory compliance.
+const SYSTEM_PROMPT = `You are the Clearwater Intelligence Desk — the AI advisory interface of Clearwater Partners, a Nigerian commercial law firm specialising in corporate advisory, capital markets, M&A, and regulatory compliance.
 
-Provide brief, authoritative, commercially grounded preliminary legal analysis. Reference Nigerian law specifically: CAMA 2020, NDPA 2023, CBN/SEC frameworks, and Ekiti State Laws where applicable.
+CONVERSATION PROTOCOL:
+1. When the user first describes their matter, respond with ONE focused clarifying question (e.g. jurisdiction, deal size, parties involved, timeline, regulatory body). Do not deliver analysis yet.
+2. After their answer, you may ask ONE more targeted question if genuinely needed. Otherwise proceed to analysis.
+3. After 2 user exchanges, deliver a structured preliminary analysis with:
+   - Key Legal Issues
+   - Relevant Law / Regulatory Framework (Nigerian law — CAMA 2020, BOFIA, FIRS, SEC rules, etc.)
+   - Recommended Next Steps
+   - A brief note that this is preliminary and formal engagement is required for substantive advice.
+4. After delivering analysis, remain available for follow-up questions in the same session.
 
-Structure:
-1. One-sentence statement of the core legal issue.
-2. 2–3 paragraphs of analysis citing applicable Nigerian statutes and regulators (CAC, FIRS, CBN, SEC, NDPC).
-3. Strategic Considerations: 2–3 bullet points.
-4. Action Items: numbered list of concrete next steps.
-5. Close with: "This preliminary analysis is provided for orientation purposes only and does not constitute legal advice. Contact the Intelligence Desk to engage Clearwater Partners formally."
-Tone: authoritative, principal-led, precise. Word limit: ~300 words.`;
+TONE: Authoritative, precise, and substantive. Never casual. Never speculative without flagging it.
+LENGTH: Clarifying questions: 1-2 sentences max. Analysis: 200-300 words, use clear headings.
+CRITICAL: Never refuse to engage with a legitimate commercial law matter. Always move the conversation forward.`;
 
-const RATE_LIMIT_MS = 30_000;
-const STEPS = [
-    { key: 1, label: 'Matter' },
-    { key: 2, label: 'Clarify' },
-    { key: 3, label: 'Identify' },
-    { key: 4, label: 'Analysis' },
-];
+const MODEL = 'gemini-2.5-flash';
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export default function CWIIntake() {
-    const [step, setStep]                 = useState(1);
-    const [scenario, setScenario]         = useState('');
-    const [questions, setQuestions]       = useState([]);
-    const [answers, setAnswers]           = useState(['', '']);
-    const [email, setEmail]               = useState('');
-    const [streamedText, setStreamedText] = useState('');
-    const [sources, setSources]           = useState([]);
-    const [error, setError]               = useState('');
-    const [loading, setLoading]           = useState(false);
+function TypingIndicator() {
+    return (
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: '12px 16px' }}>
+            {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                    width: '6px', height: '6px', borderRadius: '50%',
+                    background: 'var(--cwp-accent)', opacity: 0.6,
+                    animation: `cwi-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
+                }} />
+            ))}
+        </div>
+    );
+}
 
-    const lastRequestRef = useRef(0);
-    const abortRef       = useRef(null);
+function Message({ role, content, isFirst }) {
+    const isUser = role === 'user';
+    // The very first model message renders as a styled prompt, not a bubble
+    if (!isUser && isFirst) {
+        return (
+            <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--cwp-border)' }}>
+                <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{content}</p>
+            </div>
+        );
+    }
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: isUser ? 'flex-end' : 'flex-start',
+            marginBottom: '10px',
+        }}>
+            <div style={{
+                maxWidth: '88%',
+                padding: '10px 14px',
+                background: isUser ? 'var(--cwp-accent)' : 'rgba(255,255,255,0.04)',
+                color: isUser ? 'var(--cwp-void)' : 'var(--cwp-text)',
+                fontSize: '13px',
+                lineHeight: 1.75,
+                whiteSpace: 'pre-wrap',
+                borderLeft: isUser ? 'none' : '2px solid var(--cwp-accent)',
+            }}>
+                {content}
+            </div>
+        </div>
+    );
+}
 
-    useEffect(() => () => abortRef.current?.abort(), []);
+export default function CWIIntake({ heroMode = false }) {
+    const [messages, setMessages] = useState([
+        { role: 'model', content: 'Welcome to the Clearwater Intelligence Desk.\n\nDescribe your legal matter — I\'ll ask a few focused questions, then deliver a structured preliminary analysis.' }
+    ]);
+    const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const [sessionId] = useState(() => typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36));
+    const [leadState, setLeadState] = useState({ visible: false, submitted: false, name: '', email: '', phone: '' });
+    const [userTurns, setUserTurns] = useState(0);
+    const containerRef = useRef(null);
+    const textareaRef = useRef(null);
 
-    // ── Step 1 ──────────────────────────────────────────────────────────────
-    const handleScenarioSubmit = async () => {
-        const trimmed = scenario.trim();
-        if (trimmed.length < 30) {
-            setError('Please describe your matter in at least 30 characters.');
-            return;
-        }
-        setError('');
-
-        if (!CWI_EDGE_URL) { setStep(3); return; }
-
-        setLoading(true);
-        try {
-            const res  = await fetch(CWI_EDGE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scenario: trimmed, mode: 'drill' }),
-            });
-            const data = await res.json();
-            if (data.questions?.length > 0) {
-                setQuestions(data.questions);
-                setStep(2);
-            } else {
-                setStep(3);
-            }
-        } catch {
-            setStep(3);
-        } finally {
-            setLoading(false);
+    // Scroll WITHIN the chat container only — never jumps the page
+    const scrollToBottom = () => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
     };
 
-    // ── Step 3: Unlock ──────────────────────────────────────────────────────
-    const handleUnlock = async () => {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError('Please enter a valid email address.'); return;
-        }
-        const now = Date.now();
-        if (now - lastRequestRef.current < RATE_LIMIT_MS) {
-            setError('Please wait 30 seconds between requests.'); return;
-        }
-        lastRequestRef.current = now;
-        setError('');
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, isTyping]);
 
-        CWI_EDGE_URL ? await runRAGAnalysis() : await runGeminiFallback();
-    };
+    const sendMessage = async () => {
+        if (!input.trim() || isTyping) return;
+
+        const userMsg = { role: 'user', content: input.trim() };
+        const newMessages = [...messages, userMsg];
+        const newTurns = userTurns + 1;
+        setMessages(newMessages);
+        setInput('');
+        setIsTyping(true);
+        setUserTurns(newTurns);
+        // Dismiss mobile keyboard cleanly after send
+        textareaRef.current?.blur();
 
     // ── RAG path ────────────────────────────────────────────────────────────
     const runRAGAnalysis = async () => {
@@ -159,238 +174,231 @@ export default function CWIIntake() {
     const runGeminiFallback = async () => {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
-            setError('Intelligence Desk is not yet configured. Please contact us directly.');
+            setMessages([...newMessages, { role: 'model', content: 'Configuration error — please contact intelligence@cwplegal.africa directly.' }]);
+            setIsTyping(false);
             return;
         }
-        setStep(4);
-        setStreamedText('');
+
+        const contents = newMessages.map(m => ({
+            role: m.role,
+            parts: [{ text: m.content }],
+        }));
+
         try {
             const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        system_instruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
-                        contents: [{ parts: [{ text: scenario.replace(/<[^>]*>/g, '').slice(0, 2000) }] }],
+                        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                        contents,
                     }),
                 }
             );
-            if (!res.ok) throw new Error(`API error ${res.status}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.error?.message || `API error ${res.status}`);
+            }
             const data = await res.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error('No response from model.');
-            setStreamedText(text);
-        } catch (err) {
-            setError(err.message || 'An error occurred. Please try again.');
-            setStep(3);
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate a response.';
+            const modelMsg = { role: 'model', content: reply };
+            const updatedMessages = [...newMessages, modelMsg];
+            setMessages(updatedMessages);
+
+            // Show lead capture after first AI response
+            if (newTurns >= 1 && !leadState.visible && !leadState.submitted) {
+                setTimeout(() => setLeadState(prev => ({ ...prev, visible: true })), 800);
+            }
+
+            // Save to Supabase + localStorage backup
+            saveCWISession({ sessionId, messages: updatedMessages, leadCaptured: false });
+            try {
+                const allSessions = JSON.parse(localStorage.getItem('cwi_sessions') || '[]');
+                const idx = allSessions.findIndex(s => s.id === sessionId);
+                const session = { id: sessionId, messages: updatedMessages, timestamp: new Date().toISOString() };
+                if (idx >= 0) allSessions[idx] = session;
+                else allSessions.push(session);
+                localStorage.setItem('cwi_sessions', JSON.stringify(allSessions));
+            } catch (_) { /* storage unavailable */ }
+
+        } catch (e) {
+            setMessages([...newMessages, { role: 'model', content: `Something went wrong: ${e.message}.\n\nPlease try again or contact us at intelligence@cwplegal.africa.` }]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
-    const reset = () => {
-        abortRef.current?.abort();
-        setStep(1); setScenario(''); setQuestions([]); setAnswers(['', '']);
-        setEmail(''); setStreamedText(''); setSources([]); setError('');
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     };
 
-    const showResult  = step === 4 && streamedText.length > 0;
-    const isStreaming = step === 4 && !showResult;
-    const actionItems = extractActionItems(streamedText);
+    const submitLead = () => {
+        if (!leadState.email) return;
+        // Save to Supabase with full lead details
+        saveCWISession({
+            sessionId,
+            messages,
+            name: leadState.name,
+            email: leadState.email,
+            phone: leadState.phone,
+            leadCaptured: true,
+        });
+        // Also persist locally
+        try {
+            const enrichedSession = { id: sessionId, name: leadState.name, email: leadState.email, phone: leadState.phone, messages, timestamp: new Date().toISOString() };
+            const all = JSON.parse(localStorage.getItem('cwi_leads') || '[]');
+            all.push(enrichedSession);
+            localStorage.setItem('cwi_leads', JSON.stringify(all));
+        } catch (_) { /* storage unavailable */ }
+        setLeadState(prev => ({ ...prev, submitted: true }));
+    };
 
-    // ── Render ──────────────────────────────────────────────────────────────
-    return (
-        <section style={{
-            background: 'var(--cwp-surface)', border: '1px solid var(--cwp-border)',
-            padding: '56px 48px', position: 'relative', overflow: 'hidden',
-        }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '120px', height: '120px', borderLeft: '1px solid var(--cwp-border)', borderBottom: '1px solid var(--cwp-border)', opacity: 0.4 }} />
-
-            <SectionLabel style={{ display: 'block', marginBottom: '12px' }}>
-                CWI · Clearwater Intelligence
-            </SectionLabel>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 400, color: 'var(--cwp-white)', marginBottom: '8px', lineHeight: 1.2 }}>
-                Submit Your Matter
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '36px', maxWidth: '520px', lineHeight: 1.6 }}>
-                Describe your legal scenario. The Intelligence Desk provides rapid preliminary
-                analysis grounded in the firm's internal precedents and Nigerian commercial law.
-            </p>
-
-            {/* Step indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '36px' }} className="cwi-steps">
-                {STEPS.map(({ key, label }, i) => {
-                    const active = step === key;
-                    const done   = step > key;
-                    return (
-                        <React.Fragment key={key}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                <div style={{
-                                    width: '28px', height: '28px', borderRadius: '50%',
-                                    border: `1.5px solid ${done || active ? 'var(--cwp-accent)' : 'var(--cwp-border)'}`,
-                                    background: done ? 'var(--cwp-accent)' : 'transparent',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    transition: 'all 0.3s',
-                                }}>
-                                    {done
-                                        ? <CheckCircle2 size={13} style={{ color: 'var(--cwp-void)' }} />
-                                        : <span style={{ fontSize: '9px', color: active ? 'var(--cwp-accent)' : 'var(--cwp-muted)' }}>{key}</span>
-                                    }
-                                </div>
-                                <span style={{ fontSize: '8px', letterSpacing: '0.14em', textTransform: 'uppercase', color: active || done ? 'var(--cwp-accent)' : 'var(--cwp-muted)' }}>
-                                    {label}
-                                </span>
-                            </div>
-                            {i < STEPS.length - 1 && (
-                                <div style={{ flex: 1, height: '1px', margin: '0 8px', marginBottom: '20px', background: done ? 'var(--cwp-accent)' : 'var(--cwp-border)', transition: 'background 0.4s' }} />
-                            )}
-                        </React.Fragment>
-                    );
-                })}
+    const chatUI = (
+        <>
+            {/* Message list */}
+            <div ref={containerRef} style={{
+                minHeight: '80px',
+                maxHeight: heroMode ? '300px' : '380px',
+                overflowY: 'auto',
+                marginBottom: '12px',
+                paddingRight: '4px',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'var(--cwp-border) transparent',
+                WebkitOverflowScrolling: 'touch', // smooth scroll on iOS
+            }}>
+                {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} isFirst={i === 0} />)}
+                {isTyping && <TypingIndicator />}
             </div>
 
-            {/* ── Step 1: Scenario ─────────────────────────────────────── */}
-            {step === 1 && (
-                <div>
-                    <textarea
-                        value={scenario}
-                        onChange={e => setScenario(e.target.value)}
-                        placeholder="Describe your matter — e.g. 'We are acquiring a 60% stake in a Nigerian fintech company and need to understand the regulatory approvals required before signing a term sheet…'"
-                        rows={5}
-                        style={{ ...BASE_INPUT, padding: '16px', lineHeight: '1.7', resize: 'vertical', marginBottom: '16px' }}
-                    />
-                    {error && <Err msg={error} />}
-                    <Button onClick={handleScenarioSubmit} disabled={loading} variant="primary">
-                        {loading ? <><Loader size={14} style={SPIN} /> Preparing…</> : <>Continue <ArrowRight size={14} /></>}
-                    </Button>
-                </div>
-            )}
-
-            {/* ── Step 2: Drilling Questions ───────────────────────────── */}
-            {step === 2 && (
-                <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '24px' }}>
-                        Two clarifying questions
+            {/* Lead capture card */}
+            {leadState.visible && !leadState.submitted && (
+                <div style={{
+                    background: 'var(--cwp-void)',
+                    border: '1px solid var(--cwp-accent)',
+                    padding: '16px',
+                    marginBottom: '16px',
+                    animation: 'cwi-fadein 0.4s ease',
+                }}>
+                    <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '12px' }}>
+                        Want us to follow up?
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '32px' }}>
-                        {questions.map((q, i) => (
-                            <div key={i}>
-                                <p style={{ fontSize: '13px', color: 'var(--cwp-white)', marginBottom: '12px', lineHeight: 1.55 }}>
-                                    <span style={{ color: 'var(--cwp-accent)', fontFamily: "'Playfair Display', serif", marginRight: '10px' }}>0{i + 1}.</span>
-                                    {q}
-                                </p>
-                                <input
-                                    type="text"
-                                    value={answers[i]}
-                                    onChange={e => setAnswers(a => { const n = [...a]; n[i] = e.target.value; return n; })}
-                                    placeholder="Your answer…"
-                                    style={{ ...BASE_INPUT, padding: '14px 16px' }}
-                                />
-                            </div>
-                        ))}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                            type="text"
+                            placeholder="Your name"
+                            value={leadState.name}
+                            onChange={e => setLeadState(p => ({ ...p, name: e.target.value }))}
+                            style={{ background: 'var(--cwp-raised)', border: '1px solid var(--cwp-border)', color: 'var(--cwp-text)', padding: '10px 12px', fontSize: '12px', outline: 'none' }}
+                        />
+                        <input
+                            type="tel"
+                            placeholder="Phone number"
+                            value={leadState.phone}
+                            onChange={e => setLeadState(p => ({ ...p, phone: e.target.value }))}
+                            style={{ background: 'var(--cwp-raised)', border: '1px solid var(--cwp-border)', color: 'var(--cwp-text)', padding: '10px 12px', fontSize: '12px', outline: 'none' }}
+                        />
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <Button onClick={() => setStep(3)} variant="primary">Continue <ArrowRight size={14} /></Button>
-                        <Button onClick={() => setStep(3)} variant="ghost">Skip</Button>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Step 3: Email Gate ───────────────────────────────────── */}
-            {step === 3 && (
-                <div>
-                    <p style={{ fontSize: '13px', color: 'var(--cwp-muted)', marginBottom: '20px', lineHeight: 1.6 }}>
-                        Your analysis is ready. Enter your work email to unlock the preliminary
-                        assessment — sourced from the firm's internal precedents and Nigerian commercial law.
-                    </p>
                     <input
                         type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && !loading && handleUnlock()}
-                        placeholder="your@organisation.com"
-                        style={{ ...BASE_INPUT, padding: '14px 16px', marginBottom: '16px' }}
+                        placeholder="Email address"
+                        value={leadState.email}
+                        onChange={e => setLeadState(p => ({ ...p, email: e.target.value }))}
+                        style={{ width: '100%', background: 'var(--cwp-raised)', border: '1px solid var(--cwp-border)', color: 'var(--cwp-text)', padding: '10px 12px', fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }}
                     />
-                    {error && <Err msg={error} />}
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <Button onClick={handleUnlock} disabled={loading} variant="primary">
-                            Unlock Analysis <ArrowRight size={14} />
-                        </Button>
-                        <Button onClick={() => { setStep(questions.length ? 2 : 1); setError(''); }} variant="ghost">Back</Button>
-                    </div>
+                    <button
+                        onClick={submitLead}
+                        style={{
+                            width: '100%', background: 'var(--cwp-accent)', color: 'var(--cwp-void)',
+                            border: 'none', padding: '11px', fontSize: '10px', fontWeight: 700,
+                            letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        }}
+                    >
+                        Connect Me With the Firm <ArrowRight size={13} />
+                    </button>
                 </div>
             )}
 
-            {/* ── Step 4: Streaming + Complete Result ─────────────────── */}
-            {step === 4 && (
-                <div>
-                    {sources.length > 0 && (
-                        <div style={{ marginBottom: '16px', padding: '10px 16px', background: 'rgba(201,160,74,0.06)', border: '1px solid rgba(201,160,74,0.2)', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                            <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--cwp-accent)', whiteSpace: 'nowrap', paddingTop: '2px' }}>Sources</span>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                {sources.map(s => (
-                                    <span key={s} style={{ fontSize: '10px', color: 'var(--cwp-text)', background: 'var(--cwp-surface)', padding: '3px 10px', border: '1px solid var(--cwp-border)' }}>{s}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {!showResult && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                            <Loader size={14} style={{ color: 'var(--cwp-accent)', ...SPIN }} />
-                            <p style={{ fontSize: '11px', color: 'var(--cwp-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                                Consulting precedents…
-                            </p>
-                        </div>
-                    )}
-
-                    <div style={{ background: 'var(--cwp-raised)', border: '1px solid var(--cwp-border)', borderLeft: '3px solid var(--cwp-accent)', padding: '24px', marginBottom: '20px' }}>
-                        <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '16px' }}>
-                            Preliminary Analysis
-                        </p>
-                        <div style={{ fontSize: '13px', color: 'var(--cwp-text)', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
-                            {streamedText}
-                            {!showResult && (
-                                <span style={{ display: 'inline-block', width: '2px', height: '14px', background: 'var(--cwp-accent)', marginLeft: '2px', animation: 'cwi-blink 1s steps(1) infinite' }} />
-                            )}
-                        </div>
-                    </div>
-
-                    {showResult && actionItems.length > 0 && (
-                        <div style={{ padding: '20px 24px', background: 'var(--cwp-surface)', border: '1px solid var(--cwp-border)', marginBottom: '20px' }}>
-                            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cwp-accent)', marginBottom: '16px' }}>
-                                Action Items
-                            </p>
-                            <ol style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {actionItems.map((item, i) => (
-                                    <li key={i} style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--cwp-text)', lineHeight: 1.55 }}>
-                                        <span style={{ color: 'var(--cwp-accent)', fontWeight: 700, flexShrink: 0, fontFamily: "'Playfair Display', serif" }}>
-                                            {String(i + 1).padStart(2, '0')}.
-                                        </span>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    )}
-
-                    {showResult && (
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                            <Button onClick={reset} variant="ghost">Submit Another Matter</Button>
-                            <Button onClick={() => window.location.href = '/contact'} variant="primary">
-                                Engage Formally <ArrowRight size={14} />
-                            </Button>
-                        </div>
-                    )}
+            {leadState.submitted && (
+                <div style={{ background: 'var(--cwp-void)', border: '1px solid var(--cwp-accent)', padding: '14px 16px', marginBottom: '16px', fontSize: '12px', color: 'var(--cwp-muted)', lineHeight: 1.6 }}>
+                    ✓ Received. We'll be in touch within 24 hours. You can continue the conversation below.
                 </div>
             )}
+
+            {/* Input */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Describe your matter… (Enter to send, Shift+Enter for new line)"
+                    rows={2}
+                    style={{
+                        flex: 1,
+                        background: 'var(--cwp-raised)',
+                        border: '1px solid var(--cwp-border)',
+                        color: 'var(--cwp-text)',
+                        padding: '12px 14px',
+                        fontSize: '13px',
+                        lineHeight: 1.6,
+                        resize: 'none',
+                        outline: 'none',
+                        fontFamily: 'inherit',
+                    }}
+                    onFocus={e => e.target.style.borderColor = 'var(--cwp-accent)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--cwp-border)'}
+                />
+                <button
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isTyping}
+                    style={{
+                        background: input.trim() && !isTyping ? 'var(--cwp-accent)' : 'var(--cwp-raised)',
+                        color: input.trim() && !isTyping ? 'var(--cwp-void)' : 'var(--cwp-border)',
+                        border: '1px solid var(--cwp-border)',
+                        padding: '12px 16px',
+                        cursor: input.trim() && !isTyping ? 'pointer' : 'default',
+                        transition: 'all 0.15s',
+                        display: 'flex', alignItems: 'center',
+                    }}
+                >
+                    {isTyping ? <Loader size={16} style={{ animation: 'cwi-spin 1s linear infinite' }} /> : <Send size={16} />}
+                </button>
+            </div>
 
             <style>{`
-                @keyframes cwi-spin  { to { transform: rotate(360deg); } }
-                @keyframes cwi-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-                .cwi-steps { overflow-x: auto; scrollbar-width: none; }
-                textarea:focus, input:focus { border-color: var(--cwp-accent) !important; outline: none; }
+                @keyframes cwi-dot {
+                    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+                    40% { transform: scale(1); opacity: 1; }
+                }
+                @keyframes cwi-spin { to { transform: rotate(360deg); } }
+                @keyframes cwi-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+                textarea:focus, input:focus { border-color: var(--cwp-accent) !important; }
                 textarea::placeholder, input::placeholder { color: var(--cwp-border); }
             `}</style>
+        </>
+    );
+
+    if (heroMode) return chatUI;
+
+    return (
+        <section style={{
+            background: 'var(--cwp-surface)',
+            border: '1px solid var(--cwp-border)',
+            padding: '48px',
+            position: 'relative',
+            overflow: 'hidden',
+        }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '80px', height: '80px', borderLeft: '1px solid var(--cwp-border)', borderBottom: '1px solid var(--cwp-border)', opacity: 0.3 }} />
+            <SectionLabel style={{ display: 'block', marginBottom: '10px' }}>CWI · Clearwater Intelligence</SectionLabel>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 400, color: 'var(--cwp-white)', marginBottom: '28px', lineHeight: 1.2 }}>
+                Submit Your Matter
+            </h2>
+            {chatUI}
         </section>
     );
 }
