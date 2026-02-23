@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Send, Loader } from 'lucide-react';
+import { ArrowRight, Send, Loader, AlertCircle } from 'lucide-react';
 import SectionLabel from '../ui/SectionLabel';
 import Button from '../ui/Button';
 import { saveCWISession } from '../../lib/supabase';
