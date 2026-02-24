@@ -4,6 +4,7 @@ import { ArrowRight, Phone, Mail, MessageSquare } from 'lucide-react';
 import SectionLabel from '../components/ui/SectionLabel';
 import Button from '../components/ui/Button';
 import CWIIntake from '../components/features/CWIIntake';
+import NewsletterSignup from '../components/features/NewsletterSignup';
 import ServicesFramework from '../components/features/ServicesFramework';
 import PrecedentGrid from '../components/features/PrecedentGrid';
 import GridDots from '../components/ui/GridDots';
