@@ -4,7 +4,6 @@ import { ArrowRight, Phone, Mail, MessageSquare } from 'lucide-react';
 import SectionLabel from '../components/ui/SectionLabel';
 import Button from '../components/ui/Button';
 import CWIIntake from '../components/features/CWIIntake';
-import NewsletterSignup from '../components/features/NewsletterSignup';
 import ServicesFramework from '../components/features/ServicesFramework';
 import PrecedentGrid from '../components/features/PrecedentGrid';
 import GridDots from '../components/ui/GridDots';
@@ -392,11 +391,6 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-
-            {/* ── Newsletter ─────────────────────────────────────────────── */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 48px 80px' }}>
-                <NewsletterSignup variant="compact" />
-            </div>
 
             {/* ── Mobile Sticky CTA ──────────────────────────────────────── */}
             <MobileStickyCTA />
